@@ -1,7 +1,6 @@
 package com.meridian.application.service;
 
 import com.meridian.application.port.inbound.IngestDocumentUseCase;
-import com.meridian.application.port.inbound.StartWorkflowUseCase;
 import com.meridian.application.port.outbound.DocumentRepository;
 import com.meridian.application.port.outbound.EventPublisher;
 import com.meridian.application.port.outbound.NotificationService;
@@ -21,19 +20,16 @@ public class DefaultDocumentIngestionService implements IngestDocumentUseCase {
     private final DocumentRepository documentRepository;
     private final EventPublisher eventPublisher;
     private final DocumentValidator documentValidator;
-    private final StartWorkflowUseCase startWorkflowUseCase;
     private final NotificationService notificationService;
 
     public DefaultDocumentIngestionService(
             DocumentRepository documentRepository,
             EventPublisher eventPublisher,
             DocumentValidator documentValidator,
-            StartWorkflowUseCase startWorkflowUseCase,
             NotificationService notificationService) {
         this.documentRepository = documentRepository;
         this.eventPublisher = eventPublisher;
         this.documentValidator = documentValidator;
-        this.startWorkflowUseCase = startWorkflowUseCase;
         this.notificationService = notificationService;
     }
 

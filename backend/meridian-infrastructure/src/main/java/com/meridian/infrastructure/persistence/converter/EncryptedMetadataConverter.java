@@ -16,7 +16,7 @@ public class EncryptedMetadataConverter implements AttributeConverter<String, St
     private static final String ALGORITHM = "AES/GCM/NoPadding";
     private static final int GCM_TAG_LENGTH = 128;
     private static final int IV_LENGTH = 12;
-    private static final String SECRET_KEY = System.getenv().getOrDefault("ENCRYPTION_KEY", "changeme-changeme-changeme-changeme-changeme-changeme-changeme-ch");
+    private static final String SECRET_KEY_BASE64 = System.getenv().getOrDefault("ENCRYPTION_KEY", "MTIzNDU2Nzg5QUJDREVGR0hJSktMTU5PUFJTVFVWV1hZWis=");
 
     @Override
     public String convertToDatabaseColumn(String attribute) {
@@ -24,7 +24,7 @@ public class EncryptedMetadataConverter implements AttributeConverter<String, St
             return attribute;
         }
         try {
-            SecretKey key = new SecretKeySpec(SECRET_KEY.getBytes(), "AES");
+            SecretKey key = new SecretKeySpec(Base64.getDecoder().decode(SECRET_KEY_BASE64), "AES");
             Cipher cipher = Cipher.getInstance(ALGORITHM);
             byte[] iv = new byte[IV_LENGTH];
             new SecureRandom().nextBytes(iv);
@@ -46,7 +46,7 @@ public class EncryptedMetadataConverter implements AttributeConverter<String, St
             return dbData;
         }
         try {
-            SecretKey key = new SecretKeySpec(SECRET_KEY.getBytes(), "AES");
+            SecretKey key = new SecretKeySpec(Base64.getDecoder().decode(SECRET_KEY_BASE64), "AES");
             byte[] decoded = Base64.getDecoder().decode(dbData);
             ByteBuffer byteBuffer = ByteBuffer.wrap(decoded);
             byte[] iv = new byte[IV_LENGTH];

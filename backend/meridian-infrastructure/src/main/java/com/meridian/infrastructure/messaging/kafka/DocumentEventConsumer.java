@@ -2,6 +2,7 @@ package com.meridian.infrastructure.messaging.kafka;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.meridian.application.port.outbound.DocumentRepository;
+import com.meridian.domain.model.Document;
 import com.meridian.domain.model.DocumentStatus;
 import com.meridian.domain.model.valueobjects.DocumentId;
 import org.slf4j.Logger;
@@ -51,7 +52,20 @@ public class DocumentEventConsumer {
                 .ifPresent(document -> {
                     DocumentStatus currentStatus = document.status();
                     if (currentStatus != newStatus) {
-                        log.info("Updating document {} status from {} to {}", documentId, currentStatus, newStatus);
+                        Document updated = new Document(
+                                document.id(),
+                                document.contentHash(),
+                                document.metadata(),
+                                newStatus,
+                                document.type(),
+                                document.priority(),
+                                document.createdAt(),
+                                document.updatedAt(),
+                                document.version() + 1,
+                                document.idempotencyKey()
+                        );
+                        documentRepository.save(updated);
+                        log.info("Updated document {} status from {} to {}", documentId, currentStatus, newStatus);
                     }
                 });
     }

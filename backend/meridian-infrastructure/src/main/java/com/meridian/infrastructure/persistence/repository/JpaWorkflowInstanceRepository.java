@@ -1,20 +1,28 @@
 package com.meridian.infrastructure.persistence.repository;
 
+import com.meridian.application.port.outbound.TaskRepository;
 import com.meridian.application.port.outbound.WorkflowInstanceRepository;
 import com.meridian.domain.model.WorkflowInstance;
+import com.meridian.domain.model.valueobjects.DocumentId;
 import com.meridian.domain.model.valueobjects.WorkflowId;
 import com.meridian.infrastructure.persistence.jpa.WorkflowInstanceEntity;
 import org.springframework.stereotype.Repository;
 
-import java.util.Optional;
+import java.util.List;
+
+import java.util.List;
 
 @Repository
 public class JpaWorkflowInstanceRepository implements WorkflowInstanceRepository {
 
     private final org.springframework.data.jpa.repository.JpaRepository<WorkflowInstanceEntity, String> workflowInstanceJpaRepository;
+    private final TaskRepository taskRepository;
 
-    public JpaWorkflowInstanceRepository(org.springframework.data.jpa.repository.JpaRepository<WorkflowInstanceEntity, String> workflowInstanceJpaRepository) {
+    public JpaWorkflowInstanceRepository(
+            org.springframework.data.jpa.repository.JpaRepository<WorkflowInstanceEntity, String> workflowInstanceJpaRepository,
+            TaskRepository taskRepository) {
         this.workflowInstanceJpaRepository = workflowInstanceJpaRepository;
+        this.taskRepository = taskRepository;
     }
 
     @Override
@@ -25,9 +33,10 @@ public class JpaWorkflowInstanceRepository implements WorkflowInstanceRepository
     }
 
     @Override
-    public Optional<WorkflowInstance> findById(WorkflowId workflowId) {
+    public WorkflowInstance findById(WorkflowId workflowId) {
         return workflowInstanceJpaRepository.findById(workflowId.value())
-                .map(this::toDomain);
+                .map(this::toDomain)
+                .orElse(null);
     }
 
     private WorkflowInstanceEntity toEntity(WorkflowInstance instance) {
@@ -45,9 +54,10 @@ public class JpaWorkflowInstanceRepository implements WorkflowInstanceRepository
     }
 
     private WorkflowInstance toDomain(WorkflowInstanceEntity entity) {
+        List<com.meridian.domain.model.WorkflowTask> tasks = taskRepository.findByWorkflowId(new WorkflowId(entity.getId()));
         return new WorkflowInstance(
                 new WorkflowId(entity.getId()),
-                new com.meridian.domain.model.valueobjects.DocumentId(entity.getDocumentId()),
+                new DocumentId(entity.getDocumentId()),
                 entity.getState(),
                 entity.getContext(),
                 entity.getCorrelationId(),
@@ -55,7 +65,7 @@ public class JpaWorkflowInstanceRepository implements WorkflowInstanceRepository
                 entity.getCompletedAt(),
                 entity.getVersion(),
                 entity.getCreatedAt(),
-                List.of()
+                tasks
         );
     }
 }

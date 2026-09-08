@@ -4,8 +4,8 @@ import jakarta.persistence.*;
 import java.time.Instant;
 
 @Entity
-@Table(name = "documents")
-public class DocumentEntity {
+@Table(name = "document_reads")
+public class DocumentReadEntity {
 
     @Id
     @Column(name = "id", nullable = false, updatable = false)
@@ -15,7 +15,6 @@ public class DocumentEntity {
     private String contentHash;
 
     @Column(name = "metadata", columnDefinition = "jsonb", nullable = false)
-    @Convert(converter = com.meridian.infrastructure.persistence.converter.EncryptedMetadataConverter.class)
     private String metadata;
 
     @Column(name = "status", nullable = false, length = 20)
@@ -35,9 +34,6 @@ public class DocumentEntity {
 
     @Column(name = "version", nullable = false)
     private long version;
-
-    @Column(name = "idempotency_key", unique = true)
-    private String idempotencyKey;
 
     @PrePersist
     void onCreate() {
@@ -68,6 +64,4 @@ public class DocumentEntity {
     public void setUpdatedAt(Instant updatedAt) { this.updatedAt = updatedAt; }
     public long getVersion() { return version; }
     public void setVersion(long version) { this.version = version; }
-    public String getIdempotencyKey() { return idempotencyKey; }
-    public void setIdempotencyKey(String idempotencyKey) { this.idempotencyKey = idempotencyKey; }
 }

@@ -1,5 +1,7 @@
 package com.meridian.infrastructure.audit;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.meridian.application.port.outbound.AuditService;
 import com.meridian.domain.model.AuditLog;
 import com.meridian.infrastructure.persistence.jpa.AuditLogEntity;
@@ -13,9 +15,11 @@ import java.util.Map;
 public class PersistenceAuditService implements AuditService {
 
     private final AuditLogJpaRepository auditLogJpaRepository;
+    private final ObjectMapper objectMapper;
 
-    public PersistenceAuditService(AuditLogJpaRepository auditLogJpaRepository) {
+    public PersistenceAuditService(AuditLogJpaRepository auditLogJpaRepository, ObjectMapper objectMapper) {
         this.auditLogJpaRepository = auditLogJpaRepository;
+        this.objectMapper = objectMapper;
     }
 
     @Override
@@ -29,7 +33,11 @@ public class PersistenceAuditService implements AuditService {
         entity.setIpAddress(auditLog.ipAddress());
         entity.setUserAgent(auditLog.userAgent());
         if (auditLog.details() != null) {
-            entity.setDetails(auditLog.details().toString());
+            try {
+                entity.setDetails(objectMapper.writeValueAsString(auditLog.details()));
+            } catch (JsonProcessingException e) {
+                entity.setDetails("{}");
+            }
         }
         entity.setOccurredAt(auditLog.occurredAt());
         entity.setCreatedAt(auditLog.createdAt());

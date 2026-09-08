@@ -1,5 +1,6 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
+import { StoreModule } from '@ngrx/store';
 import { DocumentStoreModule } from './store/document-store.module';
 
 const routes: Routes = [
@@ -9,7 +10,7 @@ const routes: Routes = [
 ];
 
 @NgModule({
-  imports: [RouterModule.forRoot(routes), DocumentStoreModule],
+  imports: [RouterModule.forRoot(routes), StoreModule.forRoot({}), DocumentStoreModule],
   exports: [RouterModule]
 })
 export class AppRoutingModule { }

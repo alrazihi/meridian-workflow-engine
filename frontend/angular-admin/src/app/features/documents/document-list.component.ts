@@ -4,8 +4,9 @@ import { MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { DocumentService } from '../services/document.service';
-import { Document } from '../models/document.model';
+import { Store } from '@ngrx/store';
+import * as DocumentActions from '../../store/document.actions';
+import { Document } from '../../models/document.model';
 
 @Component({
   selector: 'app-document-list',
@@ -53,17 +54,13 @@ export class DocumentListComponent implements OnInit {
   documents: Document[] = [];
   loading = true;
 
-  constructor(private documentService: DocumentService) {}
+  constructor(private store: Store) {}
 
   ngOnInit(): void {
-    this.loadDocuments();
-  }
-
-  loadDocuments(): void {
-    this.loading = true;
-    this.documentService.getDocument('').subscribe({
-      next: () => { this.loading = false; },
-      error: () => { this.loading = false; }
+    this.store.dispatch(DocumentActions.loadDocuments());
+    this.store.select(state => (state as any).documents?.documents ?? []).subscribe(data => {
+      this.documents = data;
+      this.loading = false;
     });
   }
 }
