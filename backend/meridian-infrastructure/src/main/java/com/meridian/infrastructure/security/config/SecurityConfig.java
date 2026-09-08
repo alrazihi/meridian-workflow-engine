@@ -18,6 +18,7 @@ import java.util.Base64;
 @EnableMethodSecurity
 public class SecurityConfig {
 
+    private static final String JWKS_URI = System.getenv().getOrDefault("JWT_JWKS_URI", "");
     private static final String SECRET_KEY_BASE64 = System.getenv().getOrDefault("JWT_SECRET_KEY", "c2VjcmV0X2tleV9mb3JfZGV2X2xpbmtlZF9pbl9sZWZ0X2RlbW9fbmV0d29yaw==");
 
     @Bean
@@ -37,6 +38,9 @@ public class SecurityConfig {
 
     @Bean
     public JwtDecoder jwtDecoder() {
+        if (!JWKS_URI.isBlank()) {
+            return NimbusJwtDecoder.withJwkSetUri(JWKS_URI).build();
+        }
         byte[] keyBytes = Base64.getDecoder().decode(SECRET_KEY_BASE64);
         SecretKey secretKey = new SecretKeySpec(keyBytes, "HmacSHA256");
         return NimbusJwtDecoder.withSecretKey(secretKey).build();

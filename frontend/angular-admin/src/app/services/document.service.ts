@@ -28,4 +28,8 @@ export class DocumentService {
   getDocument(documentId: string): Observable<Document> {
     return this.http.get<Document>(`${this.apiUrl}/${documentId}`);
   }
+
+  listDocuments(): Observable<Document[]> {
+    return this.http.get<Document[]>(this.apiUrl);
+  }
 }

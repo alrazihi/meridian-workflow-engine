@@ -1,6 +1,7 @@
 package com.meridian.infrastructure.messaging.kafka;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.meridian.application.port.outbound.DocumentReadRepository;
 import com.meridian.application.port.outbound.DocumentRepository;
 import com.meridian.domain.model.Document;
 import com.meridian.domain.model.DocumentStatus;
@@ -17,14 +18,16 @@ public class DocumentEventConsumer {
 
     private static final Logger log = LoggerFactory.getLogger(DocumentEventConsumer.class);
     private final DocumentRepository documentRepository;
+    private final DocumentReadRepository documentReadRepository;
     private final ObjectMapper objectMapper;
 
-    public DocumentEventConsumer(DocumentRepository documentRepository, ObjectMapper objectMapper) {
+    public DocumentEventConsumer(DocumentRepository documentRepository, DocumentReadRepository documentReadRepository, ObjectMapper objectMapper) {
         this.documentRepository = documentRepository;
+        this.documentReadRepository = documentReadRepository;
         this.objectMapper = objectMapper;
     }
 
-    @KafkaListener(topics = "document.events", groupId = "meridian-workflow-service")
+    @KafkaListener(topics = {"document.events", "workflow.tasks", "workflow.completed"}, groupId = "meridian-workflow-service")
     public void onDocumentEvent(String message) {
         try {
             Map<String, Object> event = objectMapper.readValue(message, Map.class);
@@ -65,7 +68,8 @@ public class DocumentEventConsumer {
                                 document.idempotencyKey()
                         );
                         documentRepository.save(updated);
-                        log.info("Updated document {} status from {} to {}", documentId, currentStatus, newStatus);
+                        documentReadRepository.save(updated);
+                        log.info("Updated document {} status from {} to {} in write and read models", documentId, currentStatus, newStatus);
                     }
                 });
     }

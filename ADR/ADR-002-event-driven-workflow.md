@@ -17,15 +17,12 @@ Use **Apache Kafka** as the event backbone with the following design:
 - `workflow.tasks` — task assignment events for notification service
 - `workflow.completed` — workflow completion signals
 
-### Event Design
-- **Keyed by aggregate ID** (documentId, workflowId) for partitioning
-- **Immutable payloads** with schema registry
-- **Correlation IDs** for distributed tracing
-- **Causation IDs** to maintain event chains
+### Topic Configuration
+Topics are configurable via `spring.kafka.topics.*` properties in `application.yml`.
 
 ### Exactly-Once Semantics
-- Producer: idempotent producer with acks=all
-- Consumer: transactional consumer with offset commit after processing
+- Producer: idempotent producer with `acks=all`, `enable-idempotency=true`, `transaction-id-prefix`
+- Consumer: manual offset commit after processing (`enable-auto-commit=false`)
 - Storage: compaction on `document.events` for latest state, retention for `workflow.tasks`
 
 ## Consequences

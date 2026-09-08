@@ -23,16 +23,23 @@ spring:
     baseline-on-migrate: true
   kafka:
     bootstrap-servers: localhost:9092
+    topics:
+      document-events: document.events
+      workflow-tasks: workflow.tasks
+      workflow-completed: workflow.completed
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
       acks: all
       retries: 3
+      enable-idempotency: true
+      transaction-id-prefix: meridian-tx
     consumer:
       group-id: meridian-workflow-service
       auto-offset-reset: earliest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      enable-auto-commit: false
   redis:
     host: ${REDIS_HOST:localhost}
     port: ${REDIS_PORT:6379}

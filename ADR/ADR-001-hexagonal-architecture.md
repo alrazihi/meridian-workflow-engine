@@ -41,6 +41,9 @@ No reverse dependencies. Domain cannot import anything from outer layers.
 - Requires discipline to prevent "leakage" of framework types inward
 - Maven multi-module adds build complexity
 
+### Known Violations (Resolved)
+- ~~`DefaultDocumentQueryService` used `@Cacheable` (Spring leak into application layer)~~ — **RESOLVED**: Moved to `CachingDocumentQueryService` decorator in infrastructure layer.
+
 ## Alternatives Considered
 
 | Alternative | Reason Rejected |

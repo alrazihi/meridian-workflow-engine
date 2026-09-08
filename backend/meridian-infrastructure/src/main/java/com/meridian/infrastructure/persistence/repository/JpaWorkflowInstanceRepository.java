@@ -9,8 +9,7 @@ import com.meridian.infrastructure.persistence.jpa.WorkflowInstanceEntity;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
-
-import java.util.List;
+import java.util.Optional;
 
 @Repository
 public class JpaWorkflowInstanceRepository implements WorkflowInstanceRepository {
@@ -33,10 +32,9 @@ public class JpaWorkflowInstanceRepository implements WorkflowInstanceRepository
     }
 
     @Override
-    public WorkflowInstance findById(WorkflowId workflowId) {
+    public Optional<WorkflowInstance> findById(WorkflowId workflowId) {
         return workflowInstanceJpaRepository.findById(workflowId.value())
-                .map(this::toDomain)
-                .orElse(null);
+                .map(this::toDomain);
     }
 
     private WorkflowInstanceEntity toEntity(WorkflowInstance instance) {

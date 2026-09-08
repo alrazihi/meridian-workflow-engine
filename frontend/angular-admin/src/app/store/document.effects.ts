@@ -10,8 +10,7 @@ export class DocumentEffects {
     this.actions$.pipe(
       ofType(DocumentActions.loadDocuments),
       mergeMap(() =>
-        this.documentService.getDocument('').pipe(
-          map(() => []),
+        this.documentService.listDocuments().pipe(
           map((documents) => DocumentActions.loadDocumentsSuccess({ documents })),
           catchError((error) => of(DocumentActions.loadDocumentsFailure({ error: error.message })))
         )

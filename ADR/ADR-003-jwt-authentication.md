@@ -24,9 +24,9 @@ Implement the service as an **OAuth2 Resource Server** validating **JWTs** signe
 - **Method Security**: `@PreAuthorize` on all controller methods
 
 ### Key Management
-- Public keys fetched from JWKS endpoint
-- Cached with TTL
-- Graceful degradation on key fetch failure
+- **Primary**: Public keys fetched from JWKS endpoint (`JWT_JWKS_URI` environment variable), enabling RS256 validation
+- **Local development fallback**: HS256 with shared secret (`JWT_SECRET_KEY` environment variable)
+- Automatic selection: JWKS URI present → RS256; otherwise → HS256
 
 ## Consequences
 

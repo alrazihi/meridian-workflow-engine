@@ -8,6 +8,7 @@ import com.meridian.domain.model.valueobjects.DocumentId;
 import com.meridian.infrastructure.persistence.jpa.DocumentEntity;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Map;
 
 @Repository
@@ -32,6 +33,13 @@ public class JpaDocumentRepository implements DocumentRepository {
     public Optional<Document> findById(DocumentId id) {
         return documentJpaRepository.findById(id.value())
                 .map(this::toDomain);
+    }
+
+    @Override
+    public List<Document> findAll() {
+        return documentJpaRepository.findAll().stream()
+                .map(this::toDomain)
+                .toList();
     }
 
     @Override
