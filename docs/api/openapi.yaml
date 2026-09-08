@@ -1,0 +1,302 @@
+openapi: 3.0.3
+info:
+  title: Meridian Workflow Engine API
+  version: 1.0.0
+  description: Enterprise document processing and workflow orchestration API
+
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Local development
+
+paths:
+  /documents:
+    post:
+      summary: Ingest a new document
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                type:
+                  type: string
+                  enum: [INVOICE, CONTRACT, COMPLIANCE, REPORT]
+                priority:
+                  type: string
+                  enum: [LOW, NORMAL, HIGH, URGENT]
+                  default: NORMAL
+                metadata:
+                  type: string
+                  description: JSON metadata string
+                idempotencyKey:
+                  type: string
+                  format: uuid
+      responses:
+        '201':
+          description: Document created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /documents/{documentId}:
+    get:
+      summary: Retrieve document metadata
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Document found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /documents/{documentId}/events:
+    get:
+      summary: Get document event stream
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: cursor
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Paginated event stream
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventPage'
+
+  /workflows/{workflowId}:
+    get:
+      summary: Get workflow status
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: workflowId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Workflow status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowStatusResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /workflows/{workflowId}/tasks:
+    get:
+      summary: List pending tasks for a workflow
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: workflowId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Task list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TaskResponse'
+
+  /workflows/{workflowId}/tasks/{taskId}/complete:
+    post:
+      summary: Complete a workflow task
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: workflowId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: taskId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompleteTaskRequest'
+      responses:
+        '200':
+          description: Task completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowStatusResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    DocumentResponse:
+      type: object
+      properties:
+        documentId:
+          type: string
+        status:
+          type: string
+          enum: [RECEIVED, VALIDATING, ROUTED, PROCESSING, COMPLETED, REJECTED, ARCHIVED]
+        type:
+          type: string
+        priority:
+          type: string
+        metadata:
+          type: object
+        createdAt:
+          type: string
+          format: date-time
+        contentHash:
+          type: string
+
+    WorkflowStatusResponse:
+      type: object
+      properties:
+        workflowId:
+          type: string
+        documentId:
+          type: string
+        state:
+          type: string
+        currentTask:
+          $ref: '#/components/schemas/TaskResponse'
+        startedAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+
+    TaskResponse:
+      type: object
+      properties:
+        taskId:
+          type: string
+        assignee:
+          type: string
+        action:
+          type: string
+          enum: [APPROVE, REVIEW, SIGN, VALIDATE]
+        status:
+          type: string
+          enum: [PENDING, ASSIGNED, COMPLETED, SKIPPED]
+        dueAt:
+          type: string
+          format: date-time
+
+    CompleteTaskRequest:
+      type: object
+      required: [decision, comments]
+      properties:
+        decision:
+          type: string
+          enum: [APPROVED, REJECTED]
+        comments:
+          type: string
+
+    EventPage:
+      type: object
+      properties:
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/DocumentEvent'
+        nextCursor:
+          type: string
+
+    DocumentEvent:
+      type: object
+      properties:
+        eventId:
+          type: string
+        eventType:
+          type: string
+        payload:
+          type: object
+        occurredAt:
+          type: string
+          format: date-time
+
+  responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+    Unauthorized:
+      description: Authentication required
+    Forbidden:
+      description: Insufficient permissions
+    NotFound:
+      description: Resource not found
+    ProblemDetails:
+      type: object
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
