@@ -32,8 +32,8 @@ class DocumentListSecurityTest {
     @Test
     @WithMockUser(roles = "OPERATOR")
     void shouldReturnAllDocumentsWithoutUserFiltering() throws Exception {
-        Document doc1 = Document.create("hash1", DocumentType.INVOICE, Map.of("vendorId", "VEND-001"), null);
-        Document doc2 = Document.create("hash2", DocumentType.RECEIPT, Map.of("vendorId", "VEND-002"), null);
+        Document doc1 = Document.create("hash1", DocumentType.INVOICE, Map.of("vendorId", "VEND-001"), null, "test-tenant");
+        Document doc2 = Document.create("hash2", DocumentType.RECEIPT, Map.of("vendorId", "VEND-002"), null, "test-tenant");
         when(queryDocumentUseCase.listDocuments()).thenReturn(List.of(doc1, doc2));
 
         mockMvc.perform(get("/api/v1/documents"))

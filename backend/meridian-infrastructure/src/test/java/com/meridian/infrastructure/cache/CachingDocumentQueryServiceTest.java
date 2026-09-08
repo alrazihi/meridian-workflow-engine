@@ -28,7 +28,7 @@ class CachingDocumentQueryServiceTest {
 
     @Test
     void shouldCacheDocumentById() {
-        Document document = Document.create("hash123", DocumentType.INVOICE, Map.of("vendorId", "VEND-001"), null);
+        Document document = Document.create("hash123", DocumentType.INVOICE, Map.of("vendorId", "VEND-001"), null, "test-tenant");
         when(delegate.getDocument(new DocumentId("doc-123"))).thenReturn(document);
 
         Document result1 = cachingService.getDocument(new DocumentId("doc-123"));

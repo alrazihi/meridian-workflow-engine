@@ -44,7 +44,7 @@ class WebhookEndToEndTest {
         String payload = "{\"type\":\"INVOICE\",\"content\":\"test\"}";
         String validSignature = computeHmac(payload);
 
-        Document document = Document.create("hash123", DocumentType.INVOICE, Map.of(), null);
+        Document document = Document.create("hash123", DocumentType.INVOICE, Map.of(), null, "test-tenant");
         when(ingestDocumentUseCase.ingest(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any()))
                 .thenReturn(document);
 

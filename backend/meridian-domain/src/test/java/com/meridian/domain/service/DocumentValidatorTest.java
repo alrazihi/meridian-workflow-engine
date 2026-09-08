@@ -21,7 +21,8 @@ class DocumentValidatorTest {
                 "abc123",
                 DocumentType.INVOICE,
                 Map.of("vendorId", "VEND-001"),
-                null
+                null,
+                "test-tenant"
         );
 
         DocumentValidator.ValidationResult result = validator.validate(document);

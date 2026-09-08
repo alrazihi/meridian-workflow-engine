@@ -40,7 +40,8 @@ class DocumentRepositoryPersistenceIntegrationTest {
                 "hash123",
                 DocumentType.INVOICE,
                 Map.of("vendorId", "VEND-001"),
-                null
+                null,
+                "test-tenant"
         );
 
         Document saved = jpaDocumentRepository.save(document);
@@ -58,7 +59,8 @@ class DocumentRepositoryPersistenceIntegrationTest {
                 "hash456",
                 DocumentType.RECEIPT,
                 Map.of("store", "Store-1"),
-                "idempotency-123"
+                "idempotency-123",
+                "test-tenant"
         );
 
         Document saved = jpaDocumentRepository.save(document);
@@ -70,8 +72,8 @@ class DocumentRepositoryPersistenceIntegrationTest {
 
     @Test
     void shouldRejectDuplicateIdempotencyKey() {
-        Document document1 = Document.create("hash1", DocumentType.INVOICE, Map.of(), "key-dup");
-        Document document2 = Document.create("hash2", DocumentType.INVOICE, Map.of(), "key-dup");
+        Document document1 = Document.create("hash1", DocumentType.INVOICE, Map.of(), "key-dup", "test-tenant");
+        Document document2 = Document.create("hash2", DocumentType.INVOICE, Map.of(), "key-dup", "test-tenant");
 
         jpaDocumentRepository.save(document1);
         boolean exists = jpaDocumentRepository.existsByIdempotencyKey("key-dup");
@@ -81,8 +83,8 @@ class DocumentRepositoryPersistenceIntegrationTest {
 
     @Test
     void shouldReturnAllDocuments() {
-        Document doc1 = Document.create("hash1", DocumentType.INVOICE, Map.of(), null);
-        Document doc2 = Document.create("hash2", DocumentType.RECEIPT, Map.of(), null);
+        Document doc1 = Document.create("hash1", DocumentType.INVOICE, Map.of(), null, "test-tenant");
+        Document doc2 = Document.create("hash2", DocumentType.RECEIPT, Map.of(), null, "test-tenant");
         jpaDocumentRepository.save(doc1);
         jpaDocumentRepository.save(doc2);
 

@@ -39,7 +39,8 @@ class DocumentRepositoryIntegrationTest {
                 "hash123",
                 DocumentType.INVOICE,
                 Map.of("vendorId", "VEND-001"),
-                null
+                null,
+                "test-tenant"
         );
 
         Document saved = jpaDocumentRepository.save(document);

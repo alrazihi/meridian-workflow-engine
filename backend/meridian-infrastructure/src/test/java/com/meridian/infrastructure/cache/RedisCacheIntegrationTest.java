@@ -44,7 +44,7 @@ class RedisCacheIntegrationTest {
 
     @Test
     void shouldCacheDocumentAndAvoidSecondRepositoryCall() {
-        Document document = Document.create("hash123", DocumentType.INVOICE, Map.of("vendorId", "VEND-001"), null);
+        Document document = Document.create("hash123", DocumentType.INVOICE, Map.of("vendorId", "VEND-001"), null, "test-tenant");
         Document saved = documentRepository.save(document);
         DocumentId documentId = saved.id();
 

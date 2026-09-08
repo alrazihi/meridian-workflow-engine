@@ -46,7 +46,7 @@ class DocumentControllerTest {
     @Test
     @WithMockUser(roles = "OPERATOR")
     void shouldReturnDocumentForAuthorizedUser() throws Exception {
-        Document document = Document.create("hash123", DocumentType.INVOICE, Map.of("vendorId", "VEND-001"), null);
+        Document document = Document.create("hash123", DocumentType.INVOICE, Map.of("vendorId", "VEND-001"), null, "test-tenant");
         when(queryDocumentUseCase.getDocument(new com.meridian.domain.model.valueobjects.DocumentId("doc-123")))
                 .thenReturn(document);
 
@@ -67,8 +67,8 @@ class DocumentControllerTest {
     @Test
     @WithMockUser(roles = "OPERATOR")
     void shouldReturnDocumentList() throws Exception {
-        Document doc1 = Document.create("hash1", DocumentType.INVOICE, Map.of(), null);
-        Document doc2 = Document.create("hash2", DocumentType.RECEIPT, Map.of(), null);
+        Document doc1 = Document.create("hash1", DocumentType.INVOICE, Map.of(), null, "test-tenant");
+        Document doc2 = Document.create("hash2", DocumentType.RECEIPT, Map.of(), null, "test-tenant");
         when(queryDocumentUseCase.listDocuments()).thenReturn(List.of(doc1, doc2));
 
         mockMvc.perform(get("/api/v1/documents"))

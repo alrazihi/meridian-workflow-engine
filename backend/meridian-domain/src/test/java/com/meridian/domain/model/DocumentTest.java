@@ -17,7 +17,8 @@ class DocumentTest {
                 "hash123",
                 DocumentType.INVOICE,
                 Map.of("vendorId", "VEND-001"),
-                null
+                null,
+                "test-tenant"
         );
 
         assertThat(document.id()).isNotNull();

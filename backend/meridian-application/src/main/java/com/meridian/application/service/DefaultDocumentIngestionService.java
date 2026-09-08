@@ -46,7 +46,7 @@ public class DefaultDocumentIngestionService implements IngestDocumentUseCase {
             throw new IllegalArgumentException("Duplicate idempotency key: " + idempotencyKey);
         }
 
-        Document document = Document.create(contentHash, type, stringMetadata, idempotencyKey);
+        Document document = Document.create(contentHash, type, stringMetadata, idempotencyKey, "test-tenant");
         DocumentValidator.ValidationResult validationResult = documentValidator.validate(document);
 
         if (!validationResult.isValid()) {

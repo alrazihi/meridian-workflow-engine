@@ -53,7 +53,8 @@ class DocumentEventConsumerIntegrationTest {
                 "hash123",
                 DocumentType.INVOICE,
                 Map.of("vendorId", "VEND-001"),
-                null
+                null,
+                "test-tenant"
         );
         Document saved = documentRepository.save(document);
         String documentId = saved.id().value();
@@ -77,7 +78,8 @@ class DocumentEventConsumerIntegrationTest {
                 "hash456",
                 DocumentType.RECEIPT,
                 Map.of("store", "Store-1"),
-                null
+                null,
+                "test-tenant"
         );
         Document saved = documentRepository.save(document);
         String documentId = saved.id().value();
@@ -101,7 +103,8 @@ class DocumentEventConsumerIntegrationTest {
                 "hash789",
                 DocumentType.INVOICE,
                 Map.of("vendorId", "VEND-002"),
-                null
+                null,
+                "test-tenant"
         );
         Document saved = documentRepository.save(document);
         String documentId = saved.id().value();

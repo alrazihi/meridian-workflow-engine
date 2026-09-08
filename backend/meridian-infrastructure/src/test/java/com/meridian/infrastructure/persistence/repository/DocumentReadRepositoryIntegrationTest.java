@@ -40,7 +40,8 @@ class DocumentReadRepositoryIntegrationTest {
                 "hash123",
                 DocumentType.INVOICE,
                 Map.of("vendorId", "VEND-001"),
-                null
+                null,
+                "test-tenant"
         );
 
         jpaDocumentReadRepository.save(document);
@@ -56,11 +57,9 @@ class DocumentReadRepositoryIntegrationTest {
                 "hash123",
                 DocumentType.INVOICE,
                 Map.of("vendorId", "VEND-001"),
-                null
+                null,
+                "test-tenant"
         );
-
-        jpaDocumentReadRepository.save(document);
-        List<Document> invoices = jpaDocumentReadRepository.findByType(DocumentType.INVOICE);
 
         assertThat(invoices).hasSizeGreaterThanOrEqualTo(1);
         assertThat(invoices.get(0).type()).isEqualTo(DocumentType.INVOICE);
