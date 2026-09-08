@@ -59,7 +59,7 @@ public class DefaultWorkflowOrchestrator implements StartWorkflowUseCase, Comple
     public WorkflowInstance start(String documentId) {
         DocumentId docId = DocumentId.from(documentId);
         var document = documentRepository.findById(docId)
-                .orElseThrow(() -> new IllegalArgumentException("Document not found: " + documentId));
+                .orElseThrow(() -> new IllegalArgumentException("Document not found"));
 
         DocumentValidator.ValidationResult transitionResult = documentValidator
                 .validateTransition(document.status(), DocumentStatus.ROUTED);
@@ -118,12 +118,12 @@ public class DefaultWorkflowOrchestrator implements StartWorkflowUseCase, Comple
     @Transactional
     public WorkflowInstance completeTask(String workflowId, String taskId, String decision, String comments) {
         WorkflowTask task = taskRepository.findById(taskId)
-                .orElseThrow(() -> new IllegalArgumentException("Task not found: " + taskId));
+                .orElseThrow(() -> new IllegalArgumentException("Task not found"));
 
         if (task.status() == TaskStatus.COMPLETED) {
             log.info("Task already completed: taskId={}, workflowId={}", taskId, workflowId);
             WorkflowInstance current = workflowInstanceRepository.findById(new WorkflowId(workflowId))
-                    .orElseThrow(() -> new IllegalArgumentException("Workflow not found: " + workflowId));
+                    .orElseThrow(() -> new IllegalArgumentException("Workflow not found"));
             return current;
         }
 
@@ -131,7 +131,7 @@ public class DefaultWorkflowOrchestrator implements StartWorkflowUseCase, Comple
         taskRepository.save(completedTask);
 
         WorkflowInstance instance = workflowInstanceRepository.findById(new WorkflowId(workflowId))
-                .orElseThrow(() -> new IllegalArgumentException("Workflow not found: " + workflowId));
+                .orElseThrow(() -> new IllegalArgumentException("Workflow not found"));
 
         List<WorkflowTask> tasks = taskRepository.findByWorkflowId(new WorkflowId(workflowId));
         instance = new WorkflowInstance(
@@ -193,7 +193,7 @@ public class DefaultWorkflowOrchestrator implements StartWorkflowUseCase, Comple
     public WorkflowInstance getStatus(String workflowId) {
         WorkflowId workflowIdVo = WorkflowId.from(workflowId);
         return workflowInstanceRepository.findById(workflowIdVo)
-                .orElseThrow(() -> new IllegalArgumentException("Workflow not found: " + workflowId));
+                .orElseThrow(() -> new IllegalArgumentException("Workflow not found"));
     }
 
     private void publishEventAsync(Runnable action) {

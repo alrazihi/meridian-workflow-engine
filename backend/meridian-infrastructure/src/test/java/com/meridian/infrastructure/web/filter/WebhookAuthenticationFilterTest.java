@@ -15,6 +15,9 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
@@ -37,7 +40,7 @@ class WebhookAuthenticationFilterTest {
         when(request.getRequestURI()).thenReturn("/api/v1/documents");
         when(request.getMethod()).thenReturn("GET");
 
-        new WebhookAuthenticationFilter().doFilterInternal(request, response, filterChain);
+        new WebhookAuthenticationFilter("test-secret").doFilterInternal(request, response, filterChain);
 
         verify(filterChain).doFilter(request, response);
     }
@@ -51,7 +54,7 @@ class WebhookAuthenticationFilterTest {
         StringWriter sw = new StringWriter();
         when(response.getWriter()).thenReturn(new PrintWriter(sw));
 
-        new WebhookAuthenticationFilter().doFilterInternal(request, response, filterChain);
+        new WebhookAuthenticationFilter("test-secret").doFilterInternal(request, response, filterChain);
 
         assertThat(response.getStatus()).isEqualTo(HttpStatus.UNAUTHORIZED.value());
         verify(filterChain, org.mockito.Mockito.never()).doFilter(any(), any());
@@ -66,7 +69,7 @@ class WebhookAuthenticationFilterTest {
         StringWriter sw = new StringWriter();
         when(response.getWriter()).thenReturn(new PrintWriter(sw));
 
-        new WebhookAuthenticationFilter().doFilterInternal(request, response, filterChain);
+        new WebhookAuthenticationFilter("test-secret").doFilterInternal(request, response, filterChain);
 
         assertThat(response.getStatus()).isEqualTo(HttpStatus.UNAUTHORIZED.value());
         verify(filterChain, org.mockito.Mockito.never()).doFilter(any(), any());
@@ -76,12 +79,23 @@ class WebhookAuthenticationFilterTest {
     void shouldPassThroughWebhookWithValidSignature() throws ServletException, IOException {
         when(request.getRequestURI()).thenReturn("/api/v1/webhooks/documents");
         when(request.getMethod()).thenReturn("POST");
-        when(request.getHeader("X-HMAC-Signature")).thenReturn("valid-signature");
+
+        javax.crypto.Mac mac = javax.crypto.Mac.getInstance("HmacSHA256");
+        javax.crypto.spec.SecretKeySpec secretKey = new javax.crypto.spec.SecretKeySpec("test-secret".getBytes(), "HmacSHA256");
+        mac.init(secretKey);
+        byte[] expected = mac.doFinal("{\"type\":\"INVOICE\",\"content\":\"test\"}".getBytes());
+        StringBuilder sb = new StringBuilder();
+        for (byte b : expected) {
+            sb.append(String.format("%02x", b));
+        }
+        String validSignature = sb.toString();
+
+        when(request.getHeader("X-HMAC-Signature")).thenReturn(validSignature);
 
         StringWriter sw = new StringWriter();
         when(response.getWriter()).thenReturn(new PrintWriter(sw));
 
-        new WebhookAuthenticationFilter().doFilterInternal(request, response, filterChain);
+        new WebhookAuthenticationFilter("test-secret").doFilterInternal(request, response, filterChain);
 
         verify(filterChain).doFilter(request, response);
     }

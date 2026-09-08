@@ -15,15 +15,14 @@ import java.io.IOException;
 @Component
 public class WebhookAuthenticationFilter extends OncePerRequestFilter {
 
-    private static final String WEBHOOK_SECRET;
     private static final String WEBHOOK_PATH = "/api/v1/webhooks/documents";
+    private final String webhookSecret;
 
-    static {
-        String secret = System.getenv("WEBHOOK_SECRET");
-        if (secret == null || secret.isBlank()) {
+    public WebhookAuthenticationFilter(@Value("${WEBHOOK_SECRET:}") String webhookSecret) {
+        if (webhookSecret == null || webhookSecret.isBlank()) {
             throw new IllegalStateException("WEBHOOK_SECRET environment variable must be set");
         }
-        WEBHOOK_SECRET = secret;
+        this.webhookSecret = webhookSecret;
     }
 
     @Override
@@ -52,7 +51,7 @@ public class WebhookAuthenticationFilter extends OncePerRequestFilter {
     private boolean verifyHmac(String signature, String payload) {
         try {
             Mac mac = Mac.getInstance("HmacSHA256");
-            SecretKeySpec secretKey = new SecretKeySpec(WEBHOOK_SECRET.getBytes(), "HmacSHA256");
+            SecretKeySpec secretKey = new SecretKeySpec(webhookSecret.getBytes(), "HmacSHA256");
             mac.init(secretKey);
             byte[] expected = mac.doFinal(payload.getBytes());
             String expectedHex = bytesToHex(expected);

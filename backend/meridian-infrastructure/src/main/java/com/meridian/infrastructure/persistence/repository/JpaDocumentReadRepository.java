@@ -48,7 +48,7 @@ public class JpaDocumentReadRepository implements DocumentReadRepository {
     @Override
     public Document updateStatus(com.meridian.domain.model.valueobjects.DocumentId id, DocumentStatus newStatus) {
         DocumentReadEntity entity = documentReadJpaRepository.findById(id.value())
-                .orElseThrow(() -> new IllegalArgumentException("Document not found: " + id.value()));
+                .orElseThrow(() -> new IllegalArgumentException("Document not found"));
 
         DocumentStatus currentStatus = DocumentStatus.valueOf(entity.getStatus());
         if (currentStatus == newStatus) {

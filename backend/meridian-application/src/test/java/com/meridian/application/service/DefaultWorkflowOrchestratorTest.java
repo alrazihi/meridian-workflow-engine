@@ -54,6 +54,9 @@ class DefaultWorkflowOrchestratorTest {
     @Mock
     private AuditService auditService;
 
+    @Mock
+    private WorkflowMetrics workflowMetrics;
+
     @InjectMocks
     private DefaultWorkflowOrchestrator orchestrator;
 

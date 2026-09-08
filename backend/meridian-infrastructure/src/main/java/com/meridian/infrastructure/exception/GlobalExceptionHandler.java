@@ -43,7 +43,7 @@ public class GlobalExceptionHandler {
         ErrorResponse error = new ErrorResponse(
                 HttpStatus.BAD_REQUEST.value(),
                 "Bad Request",
-                ex.getMessage(),
+                sanitize(ex.getMessage()),
                 Instant.now().toString(),
                 MDC.get("correlationId")
         );
@@ -56,11 +56,19 @@ public class GlobalExceptionHandler {
         ErrorResponse error = new ErrorResponse(
                 HttpStatus.CONFLICT.value(),
                 "Conflict",
-                ex.getMessage(),
+                sanitize(ex.getMessage()),
                 Instant.now().toString(),
                 MDC.get("correlationId")
         );
         return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+    }
+
+    private String sanitize(String message) {
+        if (message == null) {
+            return "Invalid request";
+        }
+        return message.replaceAll("\\b[a-zA-Z0-9]{8,}-[a-zA-Z0-9-]*\\b", "[REDACTED]")
+                      .replaceAll("\\b[a-zA-Z0-9]{16,}\\b", "[REDACTED]");
     }
 
     @ExceptionHandler(RuntimeException.class)

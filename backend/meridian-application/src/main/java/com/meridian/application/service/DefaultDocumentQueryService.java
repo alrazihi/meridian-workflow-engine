@@ -18,7 +18,7 @@ public class DefaultDocumentQueryService implements QueryDocumentUseCase {
     @Override
     public Document getDocument(DocumentId documentId) {
         return documentRepository.findById(documentId)
-                .orElseThrow(() -> new IllegalArgumentException("Document not found: " + documentId.value()));
+                .orElseThrow(() -> new IllegalArgumentException("Document not found"));
     }
 
     @Override

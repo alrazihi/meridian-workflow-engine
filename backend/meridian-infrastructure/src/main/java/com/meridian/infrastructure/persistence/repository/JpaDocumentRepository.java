@@ -50,7 +50,7 @@ public class JpaDocumentRepository implements DocumentRepository {
     @Override
     public Document updateStatus(DocumentId id, DocumentStatus newStatus) {
         DocumentEntity entity = documentJpaRepository.findById(id.value())
-                .orElseThrow(() -> new IllegalArgumentException("Document not found: " + id.value()));
+                .orElseThrow(() -> new IllegalArgumentException("Document not found"));
 
         DocumentStatus currentStatus = DocumentStatus.valueOf(entity.getStatus());
         if (currentStatus == newStatus) {
