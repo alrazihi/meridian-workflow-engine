@@ -10,4 +10,5 @@ public interface DocumentReadRepository {
     void save(Document document);
     List<Document> findByStatus(DocumentStatus status);
     List<Document> findByType(DocumentType type);
+    Document updateStatus(com.meridian.domain.model.valueobjects.DocumentId id, DocumentStatus newStatus);
 }

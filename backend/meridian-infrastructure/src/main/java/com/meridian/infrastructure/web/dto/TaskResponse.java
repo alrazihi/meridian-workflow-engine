@@ -19,7 +19,7 @@ public record TaskResponse(
                 task.id(),
                 task.assignee(),
                 task.action(),
-                task.status(),
+                task.status().name(),
                 task.dueAt()
         );
     }

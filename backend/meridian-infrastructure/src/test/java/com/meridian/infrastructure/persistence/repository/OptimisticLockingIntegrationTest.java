@@ -3,7 +3,10 @@ package com.meridian.infrastructure.persistence.repository;
 import com.meridian.domain.model.Document;
 import com.meridian.domain.model.DocumentStatus;
 import com.meridian.domain.model.DocumentType;
+import com.meridian.domain.model.TaskStatus;
+import com.meridian.domain.model.WorkflowTask;
 import com.meridian.domain.model.valueobjects.DocumentId;
+import com.meridian.domain.model.valueobjects.WorkflowId;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -40,6 +43,9 @@ class OptimisticLockingIntegrationTest {
     @Autowired
     private JpaDocumentRepository jpaDocumentRepository;
 
+    @Autowired
+    private JpaTaskRepository jpaTaskRepository;
+
     @Test
     void shouldDetectConcurrentUpdateConflict() throws Exception {
         Document document = Document.create("hash123", DocumentType.INVOICE, Map.of("vendorId", "VEND-001"), null, "test-tenant");
@@ -75,6 +81,52 @@ class OptimisticLockingIntegrationTest {
                         loaded2.idempotencyKey()
                 );
                 jpaDocumentRepository.save(updated2);
+            } finally {
+                latch.countDown();
+            }
+        });
+
+        latch.await();
+
+        assertThat(future1.isDone()).isTrue();
+        assertThat(future2.isDone()).isTrue();
+
+        assertThatThrownBy(() -> future1.get())
+                .hasCauseInstanceOf(OptimisticLockingFailureException.class)
+                .isInstanceOf(Exception.class);
+
+        assertThatThrownBy(() -> future2.get())
+                .hasCauseInstanceOf(OptimisticLockingFailureException.class)
+                .isInstanceOf(Exception.class);
+
+        executor.shutdown();
+    }
+
+    @Test
+    void shouldDetectConcurrentTaskUpdateConflict() throws Exception {
+        WorkflowTask task = WorkflowTask.create(WorkflowId.generate(), "group:reviewers", "REVIEW");
+        WorkflowTask saved = jpaTaskRepository.save(task);
+        String taskId = saved.id();
+
+        WorkflowTask loaded1 = jpaTaskRepository.findById(taskId).orElseThrow();
+        WorkflowTask loaded2 = jpaTaskRepository.findById(taskId).orElseThrow();
+
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        CountDownLatch latch = new CountDownLatch(2);
+
+        Future<?> future1 = executor.submit(() -> {
+            try {
+                WorkflowTask completed1 = loaded1.complete("user1", "Comment 1");
+                jpaTaskRepository.save(completed1);
+            } finally {
+                latch.countDown();
+            }
+        });
+
+        Future<?> future2 = executor.submit(() -> {
+            try {
+                WorkflowTask completed2 = loaded2.complete("user2", "Comment 2");
+                jpaTaskRepository.save(completed2);
             } finally {
                 latch.countDown();
             }

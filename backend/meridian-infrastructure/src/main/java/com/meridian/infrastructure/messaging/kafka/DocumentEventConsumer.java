@@ -40,37 +40,20 @@ public class DocumentEventConsumer {
             }
 
             switch (eventType) {
-                case "WORKFLOW_STARTED" -> updateStatus(documentId, DocumentStatus.ROUTED);
-                case "WORKFLOW_COMPLETED" -> updateStatus(documentId, DocumentStatus.COMPLETED);
-                case "WORKFLOW_REJECTED" -> updateStatus(documentId, DocumentStatus.REJECTED);
+                case "WORKFLOW_STARTED" -> updateStatus(new DocumentId(documentId), DocumentStatus.ROUTED);
+                case "WORKFLOW_COMPLETED" -> updateStatus(new DocumentId(documentId), DocumentStatus.COMPLETED);
+                case "WORKFLOW_REJECTED" -> updateStatus(new DocumentId(documentId), DocumentStatus.REJECTED);
                 default -> log.debug("Unhandled event type: {}", eventType);
             }
         } catch (Exception e) {
             log.error("Failed to process document event: {}", message, e);
+            throw new RuntimeException("Failed to process document event", e);
         }
     }
 
-    private void updateStatus(String documentId, DocumentStatus newStatus) {
-        documentRepository.findById(new DocumentId(documentId))
-                .ifPresent(document -> {
-                    DocumentStatus currentStatus = document.status();
-                    if (currentStatus != newStatus) {
-                        Document updated = new Document(
-                                document.id(),
-                                document.contentHash(),
-                                document.metadata(),
-                                newStatus,
-                                document.type(),
-                                document.priority(),
-                                document.createdAt(),
-                                document.updatedAt(),
-                                document.version() + 1,
-                                document.idempotencyKey()
-                        );
-                        documentRepository.save(updated);
-                        documentReadRepository.save(updated);
-                        log.info("Updated document {} status from {} to {} in write and read models", documentId, currentStatus, newStatus);
-                    }
-                });
+    private void updateStatus(DocumentId documentId, DocumentStatus newStatus) {
+        Document updated = documentRepository.updateStatus(documentId, newStatus);
+        documentReadRepository.updateStatus(documentId, newStatus);
+        log.info("Updated document {} status to {} in write and read models", documentId.value(), newStatus);
     }
 }

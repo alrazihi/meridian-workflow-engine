@@ -105,4 +105,34 @@ class FailurePathIntegrationTest {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Workflow not found");
     }
+
+    @Test
+    void shouldAllowIdempotentTaskCompletion() {
+        Document document = ingestionService.ingest(
+                "test".getBytes(),
+                DocumentType.INVOICE,
+                "NORMAL",
+                Map.of("vendorId", "VEND-001"),
+                null
+        );
+
+        WorkflowInstance instance = workflowOrchestrator.start(document.id().value());
+        WorkflowTask task = instance.tasks().get(0);
+
+        WorkflowInstance first = workflowOrchestrator.completeTask(
+                instance.id().value(),
+                task.id(),
+                "APPROVED",
+                "First completion"
+        );
+        assertThat(first.state()).isEqualTo("COMPLETED");
+
+        WorkflowInstance second = workflowOrchestrator.completeTask(
+                instance.id().value(),
+                task.id(),
+                "APPROVED",
+                "Second completion attempt"
+        );
+        assertThat(second.state()).isEqualTo("COMPLETED");
+    }
 }

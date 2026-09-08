@@ -47,6 +47,21 @@ public class JpaDocumentRepository implements DocumentRepository {
         return documentJpaRepository.existsByIdempotencyKey(idempotencyKey);
     }
 
+    @Override
+    public Document updateStatus(DocumentId id, DocumentStatus newStatus) {
+        DocumentEntity entity = documentJpaRepository.findById(id.value())
+                .orElseThrow(() -> new IllegalArgumentException("Document not found: " + id.value()));
+
+        DocumentStatus currentStatus = DocumentStatus.valueOf(entity.getStatus());
+        if (currentStatus == newStatus) {
+            return toDomain(entity);
+        }
+
+        entity.setStatus(newStatus.name());
+        DocumentEntity saved = documentJpaRepository.save(entity);
+        return toDomain(saved);
+    }
+
     private DocumentEntity toEntity(Document document) {
         DocumentEntity entity = new DocumentEntity();
         entity.setId(document.id().value());

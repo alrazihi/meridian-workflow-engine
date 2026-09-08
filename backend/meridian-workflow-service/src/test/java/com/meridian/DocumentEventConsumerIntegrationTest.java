@@ -5,6 +5,7 @@ import com.meridian.domain.model.Document;
 import com.meridian.domain.model.DocumentStatus;
 import com.meridian.domain.model.DocumentType;
 import com.meridian.domain.model.valueobjects.DocumentId;
+import com.meridian.infrastructure.messaging.kafka.DocumentEventConsumer;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -18,7 +19,12 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
@@ -45,6 +51,9 @@ class DocumentEventConsumerIntegrationTest {
     private DocumentRepository documentRepository;
 
     @Autowired
+    private DocumentEventConsumer documentEventConsumer;
+
+    @Autowired
     private KafkaTemplate<String, String> kafkaTemplate;
 
     @Test
@@ -63,7 +72,7 @@ class DocumentEventConsumerIntegrationTest {
                 "{\"eventType\":\"WORKFLOW_COMPLETED\",\"documentId\":\"%s\",\"workflowId\":\"wf-123\"}",
                 documentId
         );
-        kafkaTemplate.send("document.events", documentId, eventJson);
+        documentEventConsumer.onDocumentEvent(eventJson);
 
         await().atMost(15, TimeUnit.SECONDS).untilAsserted(() -> {
             Document updated = documentRepository.findById(new DocumentId(documentId))
@@ -88,7 +97,7 @@ class DocumentEventConsumerIntegrationTest {
                 "{\"eventType\":\"WORKFLOW_REJECTED\",\"documentId\":\"%s\",\"workflowId\":\"wf-456\"}",
                 documentId
         );
-        kafkaTemplate.send("document.events", documentId, eventJson);
+        documentEventConsumer.onDocumentEvent(eventJson);
 
         await().atMost(15, TimeUnit.SECONDS).untilAsserted(() -> {
             Document updated = documentRepository.findById(new DocumentId(documentId))
@@ -113,7 +122,7 @@ class DocumentEventConsumerIntegrationTest {
                 "{\"eventType\":\"UNKNOWN_EVENT\",\"documentId\":\"%s\",\"workflowId\":\"wf-789\"}",
                 documentId
         );
-        kafkaTemplate.send("document.events", documentId, eventJson);
+        documentEventConsumer.onDocumentEvent(eventJson);
 
         Document unchanged = documentRepository.findById(new DocumentId(documentId))
                 .orElseThrow();
@@ -128,11 +137,72 @@ class DocumentEventConsumerIntegrationTest {
                 "{\"eventType\":\"WORKFLOW_COMPLETED\",\"documentId\":\"%s\",\"workflowId\":\"wf-999\"}",
                 nonExistentId
         );
-        kafkaTemplate.send("document.events", nonExistentId, eventJson);
+        documentEventConsumer.onDocumentEvent(eventJson);
 
         await().pollDelay(2, TimeUnit.SECONDS).untilAsserted(() -> {
             var found = documentRepository.findById(new DocumentId(nonExistentId));
             assertThat(found).isEmpty();
+        });
+    }
+
+    @Test
+    void shouldHandleConcurrentStatusUpdatesForSameDocument() throws Exception {
+        Document document = Document.create(
+                "hash-concurrent",
+                DocumentType.INVOICE,
+                Map.of("vendorId", "VEND-001"),
+                null,
+                "test-tenant"
+        );
+        Document saved = documentRepository.save(document);
+        String documentId = saved.id().value();
+
+        String event1 = String.format(
+                "{\"eventType\":\"WORKFLOW_STARTED\",\"documentId\":\"%s\",\"workflowId\":\"wf-1\"}",
+                documentId
+        );
+        String event2 = String.format(
+                "{\"eventType\":\"WORKFLOW_STARTED\",\"documentId\":\"%s\",\"workflowId\":\"wf-2\"}",
+                documentId
+        );
+
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        CountDownLatch latch = new CountDownLatch(2);
+        AtomicInteger successCount = new AtomicInteger(0);
+        AtomicInteger failureCount = new AtomicInteger(0);
+
+        Future<?> future1 = executor.submit(() -> {
+            try {
+                documentEventConsumer.onDocumentEvent(event1);
+                successCount.incrementAndGet();
+            } catch (Exception e) {
+                failureCount.incrementAndGet();
+            } finally {
+                latch.countDown();
+            }
+        });
+
+        Future<?> future2 = executor.submit(() -> {
+            try {
+                documentEventConsumer.onDocumentEvent(event2);
+                successCount.incrementAndGet();
+            } catch (Exception e) {
+                failureCount.incrementAndGet();
+            } finally {
+                latch.countDown();
+            }
+        });
+
+        latch.await();
+        executor.shutdown();
+
+        assertThat(successCount.get()).isEqualTo(1);
+        assertThat(failureCount.get()).isEqualTo(1);
+
+        await().atMost(5, TimeUnit.SECONDS).untilAsserted(() -> {
+            Document updated = documentRepository.findById(new DocumentId(documentId))
+                    .orElseThrow();
+            assertThat(updated.status()).isEqualTo(DocumentStatus.ROUTED);
         });
     }
 }

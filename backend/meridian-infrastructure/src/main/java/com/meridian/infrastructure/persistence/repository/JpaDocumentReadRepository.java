@@ -45,6 +45,21 @@ public class JpaDocumentReadRepository implements DocumentReadRepository {
                 .toList();
     }
 
+    @Override
+    public Document updateStatus(com.meridian.domain.model.valueobjects.DocumentId id, DocumentStatus newStatus) {
+        DocumentReadEntity entity = documentReadJpaRepository.findById(id.value())
+                .orElseThrow(() -> new IllegalArgumentException("Document not found: " + id.value()));
+
+        DocumentStatus currentStatus = DocumentStatus.valueOf(entity.getStatus());
+        if (currentStatus == newStatus) {
+            return toDomain(entity);
+        }
+
+        entity.setStatus(newStatus.name());
+        DocumentReadEntity saved = documentReadJpaRepository.save(entity);
+        return toDomain(saved);
+    }
+
     private DocumentReadEntity toEntity(Document document) {
         DocumentReadEntity entity = new DocumentReadEntity();
         entity.setId(document.id().value());

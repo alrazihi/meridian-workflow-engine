@@ -2,6 +2,7 @@ package com.meridian.infrastructure.persistence.repository;
 
 import com.meridian.domain.model.Document;
 import com.meridian.domain.model.DocumentType;
+import com.meridian.domain.model.TaskStatus;
 import com.meridian.domain.model.WorkflowTask;
 import com.meridian.domain.model.valueobjects.DocumentId;
 import com.meridian.domain.model.valueobjects.WorkflowId;
@@ -46,7 +47,7 @@ class TaskRepositoryIntegrationTest {
         var found = jpaTaskRepository.findById(saved.id());
         assertThat(found).isPresent();
         assertThat(found.get().action()).isEqualTo("REVIEW");
-        assertThat(found.get().status()).isEqualTo("PENDING");
+        assertThat(found.get().status()).isEqualTo(TaskStatus.PENDING);
     }
 
     @Test

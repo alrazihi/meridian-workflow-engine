@@ -1,6 +1,7 @@
 package com.meridian.infrastructure.persistence.repository;
 
 import com.meridian.application.port.outbound.TaskRepository;
+import com.meridian.domain.model.TaskStatus;
 import com.meridian.domain.model.WorkflowTask;
 import com.meridian.domain.model.valueobjects.WorkflowId;
 import com.meridian.infrastructure.persistence.jpa.WorkflowTaskEntity;
@@ -44,7 +45,7 @@ public class JpaTaskRepository implements TaskRepository {
         entity.setWorkflowId(task.workflowId().value());
         entity.setAssignee(task.assignee());
         entity.setAction(task.action());
-        entity.setStatus(task.status());
+        entity.setStatus(task.status().name());
         entity.setDueAt(task.dueAt());
         entity.setCompletedAt(task.completedAt());
         entity.setCompletedBy(task.completedBy());
@@ -59,12 +60,13 @@ public class JpaTaskRepository implements TaskRepository {
                 new WorkflowId(entity.getWorkflowId()),
                 entity.getAssignee(),
                 entity.getAction(),
-                entity.getStatus(),
+                TaskStatus.valueOf(entity.getStatus()),
                 entity.getDueAt(),
                 entity.getCompletedAt(),
                 entity.getCompletedBy(),
                 entity.getComments(),
-                entity.getCreatedAt()
+                entity.getCreatedAt(),
+                entity.getVersion()
         );
     }
 }

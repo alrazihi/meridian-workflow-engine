@@ -10,12 +10,13 @@ public record WorkflowTask(
     WorkflowId workflowId,
     String assignee,
     String action,
-    String status,
+    TaskStatus status,
     Instant dueAt,
     Instant completedAt,
     String completedBy,
     String comments,
-    Instant createdAt
+    Instant createdAt,
+    long version
 ) {
     public WorkflowTask {
         Objects.requireNonNull(workflowId, "workflowId cannot be null");
@@ -30,42 +31,51 @@ public record WorkflowTask(
             workflowId,
             assignee,
             action,
-            "PENDING",
+            TaskStatus.PENDING,
             null,
             null,
             null,
             null,
-            Instant.now()
+            Instant.now(),
+            0L
         );
     }
 
     public WorkflowTask assign() {
+        if (status != TaskStatus.PENDING) {
+            throw new IllegalStateException("Cannot assign task in status: " + status);
+        }
         return new WorkflowTask(
             this.id,
             this.workflowId,
             this.assignee,
             this.action,
-            "ASSIGNED",
+            TaskStatus.ASSIGNED,
             this.dueAt,
             this.completedAt,
             this.completedBy,
             this.comments,
-            this.createdAt
+            this.createdAt,
+            this.version
         );
     }
 
     public WorkflowTask complete(String completedBy, String comments) {
+        if (status == TaskStatus.COMPLETED) {
+            throw new IllegalStateException("Task is already completed");
+        }
         return new WorkflowTask(
             this.id,
             this.workflowId,
             this.assignee,
             this.action,
-            "COMPLETED",
+            TaskStatus.COMPLETED,
             this.dueAt,
             Instant.now(),
             completedBy,
             comments,
-            this.createdAt
+            this.createdAt,
+            this.version
         );
     }
 }

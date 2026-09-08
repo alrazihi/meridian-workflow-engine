@@ -1,5 +1,6 @@
 package com.meridian.infrastructure.web.dto;
 
+import com.meridian.domain.model.TaskStatus;
 import com.meridian.domain.model.WorkflowInstance;
 import com.meridian.domain.model.WorkflowTask;
 
@@ -18,7 +19,7 @@ public record WorkflowStatusResponse(
             return null;
         }
         WorkflowTask currentTask = instance.tasks().stream()
-                .filter(t -> !"COMPLETED".equals(t.status()) && !"SKIPPED".equals(t.status()))
+                .filter(t -> t.status() != TaskStatus.COMPLETED)
                 .findFirst()
                 .orElse(null);
         return new WorkflowStatusResponse(

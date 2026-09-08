@@ -8,6 +8,7 @@ import com.meridian.application.port.outbound.NotificationService;
 import com.meridian.domain.model.valueobjects.DocumentId;
 import com.meridian.domain.model.DocumentStatus;
 import com.meridian.domain.model.DocumentEvent;
+import com.meridian.domain.model.TaskStatus;
 import com.meridian.domain.model.WorkflowInstance;
 import com.meridian.domain.model.WorkflowTask;
 import com.meridian.domain.service.DocumentValidator;
@@ -87,6 +88,12 @@ public class DefaultWorkflowOrchestrator implements StartWorkflowUseCase, Comple
     public WorkflowInstance completeTask(String workflowId, String taskId, String decision, String comments) {
         WorkflowTask task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new IllegalArgumentException("Task not found: " + taskId));
+
+        if (task.status() == TaskStatus.COMPLETED) {
+            WorkflowInstance current = workflowInstanceRepository.findById(new WorkflowId(workflowId))
+                    .orElseThrow(() -> new IllegalArgumentException("Workflow not found: " + workflowId));
+            return current;
+        }
 
         WorkflowTask completedTask = task.complete("current-user", comments);
         taskRepository.save(completedTask);

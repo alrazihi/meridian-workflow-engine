@@ -1,6 +1,7 @@
 package com.meridian.application.port.outbound;
 
 import com.meridian.domain.model.Document;
+import com.meridian.domain.model.DocumentStatus;
 import com.meridian.domain.model.valueobjects.DocumentId;
 
 import java.util.List;
@@ -11,4 +12,5 @@ public interface DocumentRepository {
     Optional<Document> findById(DocumentId id);
     List<Document> findAll();
     boolean existsByIdempotencyKey(String idempotencyKey);
+    Document updateStatus(DocumentId id, DocumentStatus newStatus);
 }

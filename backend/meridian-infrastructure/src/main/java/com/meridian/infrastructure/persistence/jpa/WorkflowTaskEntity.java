@@ -38,6 +38,10 @@ public class WorkflowTaskEntity {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
+    @Version
+    @Column(name = "version", nullable = false)
+    private long version;
+
     @PrePersist
     void onCreate() {
         if (createdAt == null) createdAt = Instant.now();
@@ -63,4 +67,6 @@ public class WorkflowTaskEntity {
     public void setComments(String comments) { this.comments = comments; }
     public Instant getCreatedAt() { return createdAt; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
+    public long getVersion() { return version; }
+    public void setVersion(long version) { this.version = version; }
 }

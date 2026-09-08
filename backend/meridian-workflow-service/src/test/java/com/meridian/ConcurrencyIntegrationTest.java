@@ -9,6 +9,7 @@ import com.meridian.domain.model.WorkflowTask;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -21,8 +22,10 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest
 @Testcontainers
@@ -92,6 +95,8 @@ class ConcurrencyIntegrationTest {
 
         ExecutorService executor = Executors.newFixedThreadPool(5);
         CountDownLatch latch = new CountDownLatch(5);
+        AtomicInteger successCount = new AtomicInteger(0);
+        AtomicInteger failureCount = new AtomicInteger(0);
 
         for (int i = 0; i < 5; i++) {
             executor.submit(() -> {
@@ -102,8 +107,12 @@ class ConcurrencyIntegrationTest {
                             "APPROVED",
                             "Concurrent completion"
                     );
+                    successCount.incrementAndGet();
+                } catch (OptimisticLockingFailureException e) {
+                    failureCount.incrementAndGet();
                 } catch (Exception e) {
-                    // expected: only one should succeed or they may race
+                    // Other exceptions count as failures
+                    failureCount.incrementAndGet();
                 } finally {
                     latch.countDown();
                 }
@@ -113,8 +122,11 @@ class ConcurrencyIntegrationTest {
         latch.await();
         executor.shutdown();
 
+        assertThat(successCount.get()).isEqualTo(1);
+        assertThat(failureCount.get()).isEqualTo(4);
+
         WorkflowInstance finalState = workflowOrchestrator.getStatus(instance.id().value());
         assertThat(finalState).isNotNull();
-        assertThat(finalState.state()).isIn("COMPLETED", "REJECTED");
+        assertThat(finalState.state()).isEqualTo("COMPLETED");
     }
 }

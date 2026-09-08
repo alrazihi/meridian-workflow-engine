@@ -21,7 +21,7 @@ class WorkflowTaskTest {
         assertThat(task.id()).isNotNull();
         assertThat(task.assignee()).isEqualTo("group:reviewers");
         assertThat(task.action()).isEqualTo("REVIEW");
-        assertThat(task.status()).isEqualTo("PENDING");
+        assertThat(task.status()).isEqualTo(TaskStatus.PENDING);
         assertThat(task.completedAt()).isNull();
         assertThat(task.completedBy()).isNull();
     }
@@ -29,24 +29,24 @@ class WorkflowTaskTest {
     @Test
     void shouldRejectTaskWithNullWorkflowId() {
         assertThatThrownBy(() -> new WorkflowTask(
-                "task-1", null, "group", "REVIEW", "PENDING",
-                null, null, null, null, Instant.now()
+                "task-1", null, "group", "REVIEW", TaskStatus.PENDING,
+                null, null, null, null, Instant.now(), 0L
         )).isInstanceOf(NullPointerException.class);
     }
 
     @Test
     void shouldRejectTaskWithNullAssignee() {
         assertThatThrownBy(() -> new WorkflowTask(
-                "task-1", WorkflowId.generate(), null, "REVIEW", "PENDING",
-                null, null, null, null, Instant.now()
+                "task-1", WorkflowId.generate(), null, "REVIEW", TaskStatus.PENDING,
+                null, null, null, null, Instant.now(), 0L
         )).isInstanceOf(NullPointerException.class);
     }
 
     @Test
     void shouldRejectTaskWithNullAction() {
         assertThatThrownBy(() -> new WorkflowTask(
-                "task-1", WorkflowId.generate(), "group", null, "PENDING",
-                null, null, null, null, Instant.now()
+                "task-1", WorkflowId.generate(), "group", null, TaskStatus.PENDING,
+                null, null, null, null, Instant.now(), 0L
         )).isInstanceOf(NullPointerException.class);
     }
 
@@ -54,7 +54,7 @@ class WorkflowTaskTest {
     void shouldRejectTaskWithNullStatus() {
         assertThatThrownBy(() -> new WorkflowTask(
                 "task-1", WorkflowId.generate(), "group", "REVIEW", null,
-                null, null, null, null, Instant.now()
+                null, null, null, null, Instant.now(), 0L
         )).isInstanceOf(NullPointerException.class);
     }
 
@@ -67,7 +67,7 @@ class WorkflowTaskTest {
         );
 
         WorkflowTask assigned = task.assign();
-        assertThat(assigned.status()).isEqualTo("ASSIGNED");
+        assertThat(assigned.status()).isEqualTo(TaskStatus.ASSIGNED);
         assertThat(assigned.id()).isEqualTo(task.id());
         assertThat(assigned.assignee()).isEqualTo(task.assignee());
     }
@@ -81,10 +81,23 @@ class WorkflowTaskTest {
         ).assign();
 
         WorkflowTask completed = task.complete("user-123", "Looks good");
-        assertThat(completed.status()).isEqualTo("COMPLETED");
+        assertThat(completed.status()).isEqualTo(TaskStatus.COMPLETED);
         assertThat(completed.completedBy()).isEqualTo("user-123");
         assertThat(completed.completedAt()).isNotNull();
         assertThat(completed.comments()).isEqualTo("Looks good");
+    }
+
+    @Test
+    void shouldRejectCompleteOnAlreadyCompletedTask() {
+        WorkflowTask task = WorkflowTask.create(
+                WorkflowId.generate(),
+                "group:reviewers",
+                "REVIEW"
+        ).assign().complete("user-123", "Looks good");
+
+        assertThatThrownBy(() -> task.complete("user-456", "Second completion"))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("already completed");
     }
 
     @Test
