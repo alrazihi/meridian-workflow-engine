@@ -20,9 +20,9 @@ jobs:
         with:
           node-version: 20
       - name: Run Spotless Check
-        run: mvn -B spotless:check -pl backend/meridian-domain,backend/meridian-application,backend/meridian-infrastructure,backend/meridian-workflow-service
+        run: cd backend && mvn -B spotless:check -pl meridian-domain,meridian-application,meridian-infrastructure,meridian-workflow-service
       - name: Run Checkstyle
-        run: mvn -B checkstyle:check -pl backend/meridian-domain,backend/meridian-application,backend/meridian-infrastructure,backend/meridian-workflow-service
+        run: cd backend && mvn -B checkstyle:check -pl meridian-domain,meridian-application,meridian-infrastructure,meridian-workflow-service
       - name: Lint Frontend
         run: cd frontend/angular-admin && npm ci && npm run lint
 
@@ -36,7 +36,7 @@ jobs:
           java-version: 21
           cache: maven
       - name: Run Unit Tests
-        run: mvn -B test -pl backend/meridian-domain,backend/meridian-application
+        run: cd backend && mvn -B test -pl meridian-domain,meridian-application
       - name: Upload Coverage
         uses: codecov/codecov-action@v4
         with:
@@ -67,7 +67,7 @@ jobs:
           java-version: 21
           cache: maven
       - name: Run Integration Tests
-        run: mvn -B verify -pl backend/meridian-infrastructure,backend/meridian-workflow-service -DskipUnitTests
+        run: cd backend && mvn -B verify -pl meridian-infrastructure,meridian-workflow-service -DskipUnitTests
         env:
           SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/meridian
           SPRING_DATASOURCE_USERNAME: meridian
@@ -90,10 +90,11 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/angular-admin/package-lock.json
       - name: Build Backend
-        run: mvn -B package -DskipTests -pl backend/meridian-workflow-service -am
+        run: cd backend && mvn -B package -DskipTests -pl meridian-workflow-service -am
       - name: Build Frontend
         run: cd frontend/angular-admin && npm ci && npm run build
       - name: Build and Push Docker Image
         run: |
           docker build -t meridian-workflow-engine:${{ github.sha }} -f backend/meridian-workflow-service/Dockerfile .
           echo "Docker image built for ${{ github.sha }}"
+
