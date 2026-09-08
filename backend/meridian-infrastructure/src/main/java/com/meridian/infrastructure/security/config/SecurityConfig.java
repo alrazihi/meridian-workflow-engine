@@ -22,6 +22,12 @@ public class SecurityConfig {
     private static final String JWKS_URI = System.getenv().getOrDefault("JWT_JWKS_URI", "");
     private static final String SECRET_KEY_BASE64 = System.getenv().getOrDefault("JWT_SECRET_KEY", "c2VjcmV0X2tleV9mb3JfZGV2X2xpbmtlZF9pbl9sZWZ0X2RlbW9fbmV0d29yaw==");
 
+    public SecurityConfig() {
+        if (JWKS_URI.isBlank() && SECRET_KEY_BASE64.equals("c2VjcmV0X2tleV9mb3JfZGV2X2xpbmtlZF9pbl9sZWZ0X2RlbW9fbmV0d29yaw==")) {
+            throw new IllegalStateException("Either JWT_JWKS_URI or JWT_SECRET_KEY must be set. Default secret is not safe for production.");
+        }
+    }
+
     @Bean
     public CorrelationIdFilter correlationIdFilter() {
         return new CorrelationIdFilter();
@@ -32,6 +38,7 @@ public class SecurityConfig {
         http
                 .authorizeHttpRequests(authz -> authz
                         .requestMatchers("/actuator/health", "/actuator/info").permitAll()
+                        .requestMatchers("/api/v1/webhooks/documents").permitAll()
                         .anyRequest().authenticated()
                 )
                 .csrf(csrf -> csrf.disable())

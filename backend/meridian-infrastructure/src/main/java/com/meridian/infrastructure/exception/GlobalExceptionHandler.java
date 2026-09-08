@@ -1,17 +1,17 @@
 package com.meridian.infrastructure.exception;
 
 import com.meridian.infrastructure.observability.WorkflowMetrics;
+import com.meridian.infrastructure.web.dto.ErrorResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.time.Instant;
-import java.util.HashMap;
-import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -24,40 +24,55 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(OptimisticLockingFailureException.class)
-    public Map<String, Object> handleOptimisticLock(OptimisticLockingFailureException ex) {
+    public ResponseEntity<ErrorResponse> handleOptimisticLock(OptimisticLockingFailureException ex) {
         workflowMetrics.incrementOptimisticLockFailure();
         log.warn("Optimistic lock failure: {}", ex.getMessage());
-        return errorResponse(HttpStatus.CONFLICT, "Conflict", "Resource was modified by another transaction");
+        ErrorResponse error = new ErrorResponse(
+                HttpStatus.CONFLICT.value(),
+                "Conflict",
+                "Resource was modified by another transaction",
+                Instant.now().toString(),
+                MDC.get("correlationId")
+        );
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
-    public Map<String, Object> handleIllegalArgument(IllegalArgumentException ex) {
+    public ResponseEntity<ErrorResponse> handleIllegalArgument(IllegalArgumentException ex) {
         log.warn("Bad request: {}", ex.getMessage());
-        return errorResponse(HttpStatus.BAD_REQUEST, "Bad Request", ex.getMessage());
+        ErrorResponse error = new ErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                "Bad Request",
+                ex.getMessage(),
+                Instant.now().toString(),
+                MDC.get("correlationId")
+        );
+        return ResponseEntity.badRequest().body(error);
     }
 
     @ExceptionHandler(IllegalStateException.class)
-    public Map<String, Object> handleIllegalState(IllegalStateException ex) {
+    public ResponseEntity<ErrorResponse> handleIllegalState(IllegalStateException ex) {
         log.warn("Conflict: {}", ex.getMessage());
-        return errorResponse(HttpStatus.CONFLICT, "Conflict", ex.getMessage());
+        ErrorResponse error = new ErrorResponse(
+                HttpStatus.CONFLICT.value(),
+                "Conflict",
+                ex.getMessage(),
+                Instant.now().toString(),
+                MDC.get("correlationId")
+        );
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
     }
 
     @ExceptionHandler(RuntimeException.class)
-    public Map<String, Object> handleRuntime(RuntimeException ex) {
+    public ResponseEntity<ErrorResponse> handleRuntime(RuntimeException ex) {
         log.error("Unexpected error", ex);
-        return errorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error", "An unexpected error occurred");
-    }
-
-    private Map<String, Object> errorResponse(HttpStatus status, String title, String detail) {
-        Map<String, Object> error = new HashMap<>();
-        error.put("status", status.value());
-        error.put("error", title);
-        error.put("message", detail);
-        error.put("timestamp", Instant.now().toString());
-        String correlationId = MDC.get("correlationId");
-        if (correlationId != null) {
-            error.put("correlationId", correlationId);
-        }
-        return error;
+        ErrorResponse error = new ErrorResponse(
+                HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                "Internal Server Error",
+                "An unexpected error occurred",
+                Instant.now().toString(),
+                MDC.get("correlationId")
+        );
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
     }
 }

@@ -15,8 +15,16 @@ import java.io.IOException;
 @Component
 public class WebhookAuthenticationFilter extends OncePerRequestFilter {
 
-    private static final String WEBHOOK_SECRET = System.getenv().getOrDefault("WEBHOOK_SECRET", "changeme-webhook-secret");
+    private static final String WEBHOOK_SECRET;
     private static final String WEBHOOK_PATH = "/api/v1/webhooks/documents";
+
+    static {
+        String secret = System.getenv("WEBHOOK_SECRET");
+        if (secret == null || secret.isBlank()) {
+            throw new IllegalStateException("WEBHOOK_SECRET environment variable must be set");
+        }
+        WEBHOOK_SECRET = secret;
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
