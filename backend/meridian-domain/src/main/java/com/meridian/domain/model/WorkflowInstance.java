@@ -16,7 +16,8 @@ public record WorkflowInstance(
     Instant startedAt,
     Instant completedAt,
     long version,
-    Instant createdAt
+    Instant createdAt,
+    List<WorkflowTask> tasks
 ) {
     public WorkflowInstance {
         Objects.requireNonNull(id, "id cannot be null");
@@ -37,12 +38,13 @@ public record WorkflowInstance(
             Instant.now(),
             null,
             0L,
-            Instant.now()
+            Instant.now(),
+            List.of()
         );
     }
 
     public List<WorkflowTask> tasks() {
-        return List.of();
+        return tasks;
     }
 
     public WorkflowInstance withState(String newState) {
@@ -55,7 +57,8 @@ public record WorkflowInstance(
             this.startedAt,
             this.completedAt,
             this.version + 1,
-            this.createdAt
+            this.createdAt,
+            this.tasks
         );
     }
 }

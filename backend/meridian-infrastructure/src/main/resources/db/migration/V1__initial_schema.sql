@@ -8,11 +8,13 @@ CREATE TABLE IF NOT EXISTS documents (
     status VARCHAR(20) NOT NULL DEFAULT 'RECEIVED',
     type VARCHAR(20) NOT NULL,
     priority VARCHAR(10) NOT NULL DEFAULT 'NORMAL',
+    idempotency_key VARCHAR(36),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     version BIGINT NOT NULL DEFAULT 0,
     CONSTRAINT chk_document_status CHECK (status IN ('RECEIVED','VALIDATING','ROUTED','PROCESSING','COMPLETED','REJECTED','ARCHIVED')),
-    CONSTRAINT chk_document_priority CHECK (priority IN ('LOW','NORMAL','HIGH','URGENT'))
+    CONSTRAINT chk_document_priority CHECK (priority IN ('LOW','NORMAL','HIGH','URGENT')),
+    CONSTRAINT uq_documents_idempotency_key UNIQUE (idempotency_key)
 );
 
 CREATE INDEX IF NOT EXISTS idx_documents_status_priority_created

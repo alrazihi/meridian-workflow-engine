@@ -14,13 +14,13 @@
 ┌─────────────────────────────────────────────────────┐
 │              meridian-workflow-service               │
 │  ┌─────────────┐                                    │
-│  │ JwtAuthConv │──validates signature, exp, scope   │
+│  │ JwtDecoder  │──validates signature, exp via HS256│
 │  └──────┬──────┘                                    │
 │         │                                           │
 │  ┌──────▼─────────────────────────────┐             │
 │  │      Method Security              │             │
 │  │  @PreAuthorize hasRole('REVIEWER')│             │
-│  │  @PreAuthorize hasDocumentAccess()│             │
+│  │  @PreAuthorize hasRole('ADMIN')   │             │
 │  └───────────────────────────────────┘             │
 └─────────────────────────────────────────────────────┘
 ```
@@ -29,44 +29,44 @@
 
 | Role | Capabilities |
 |------|-------------|
-| `OPERATOR` | Ingest documents, query own documents |
+| `OPERATOR` | Ingest documents, query documents |
 | `REVIEWER` | View assigned tasks, approve/reject |
-| `ADMIN` | Manage routing rules, view all documents |
+| `ADMIN` | View all documents, manage routing rules |
 | `SYSTEM` | Internal service accounts only |
 
 ## Authorization Rules
 
 ### Document Access
 ```java
-@PreAuthorize("hasDocumentAccess(#documentId)")
+@PreAuthorize("hasRole('OPERATOR') or hasRole('REVIEWER') or hasRole('ADMIN')")
 DocumentResponse getDocument(String documentId);
 ```
 
-Implementation evaluates:
-1. User has `ADMIN` role → allow
-2. User is assignee on any active task for document → allow
-3. User belongs to group with document-level ACL entry → allow
-4. Otherwise → deny
+### Workflow Access
+```java
+@PreAuthorize("hasRole('REVIEWER')")
+WorkflowStatusResponse completeTask(...);
+```
 
 ## Data Protection
 
 ### Encryption at Rest
-- Document metadata JSONB fields containing PII encrypted via JPA `AttributeConverter`
-- Algorithm: AES-256-GCM
-- Key management: environment variable or Spring Vault
+- ~~Document metadata JSONB fields containing PII encrypted via JPA `AttributeConverter`~~ — **PLANNED**
+- ~~Algorithm: AES-256-GCM~~ — **PLANNED**
+- Key management: environment variable or Spring Vault — **PLANNED**
 
 ### Encryption in Transit
-- TLS 1.3 required for all external connections
-- mTLS optional for internal service mesh
+- TLS 1.3 required for all external connections — **PLANNED**
+- mTLS optional for internal service mesh — **PLANNED**
 
 ### Secrets Management
 - No secrets in code or configuration files
 - Environment variables for local development
-- HashiCorp Vault or AWS Secrets Manager for production
+- HashiCorp Vault or AWS Secrets Manager for production — **PLANNED**
 
 ## Audit Logging
 
-All security-relevant events logged with immutable entries:
+All security-relevant events logged with immutable entries — **PLANNED**:
 
 | Event | Fields |
 |-------|--------|

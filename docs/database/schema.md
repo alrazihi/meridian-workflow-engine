@@ -12,11 +12,11 @@
 │ status          │  │    │ context (JSONB)     │
 │ type            │  │    │ correlation_id      │
 │ priority        │  │    │ started_at          │
-│ created_at      │  │    │ completed_at        │
-│ updated_at      │  │    │ version             │
-│ version         │  │    │ created_at          │
-└─────────────────┘  │    └─────────────────────┘
-                     │
+│ idempotency_key │  │    │ completed_at        │
+│ created_at      │  │    │ version             │
+│ updated_at      │  │    │ created_at          │
+│ version         │  │    └─────────────────────┘
+└─────────────────┘  │
                      │    ┌─────────────────────┐
                      └───►│   workflow_tasks    │
                           ├─────────────────────┤

@@ -36,6 +36,9 @@ public class DocumentEntity {
     @Column(name = "version", nullable = false)
     private long version;
 
+    @Column(name = "idempotency_key", unique = true)
+    private String idempotencyKey;
+
     @PrePersist
     void onCreate() {
         if (createdAt == null) createdAt = Instant.now();
@@ -65,4 +68,6 @@ public class DocumentEntity {
     public void setUpdatedAt(Instant updatedAt) { this.updatedAt = updatedAt; }
     public long getVersion() { return version; }
     public void setVersion(long version) { this.version = version; }
+    public String getIdempotencyKey() { return idempotencyKey; }
+    public void setIdempotencyKey(String idempotencyKey) { this.idempotencyKey = idempotencyKey; }
 }

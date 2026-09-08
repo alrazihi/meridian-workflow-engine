@@ -9,5 +9,5 @@ import java.util.Optional;
 @Repository
 public interface DocumentJpaRepository extends JpaRepository<DocumentEntity, String> {
     Optional<DocumentEntity> findById(String id);
-    boolean existsById(String id);
+    boolean existsByIdempotencyKey(String idempotencyKey);
 }

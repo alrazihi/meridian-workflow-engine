@@ -16,7 +16,8 @@ class DocumentTest {
         Document document = Document.create(
                 "hash123",
                 DocumentType.INVOICE,
-                Map.of("vendorId", "VEND-001")
+                Map.of("vendorId", "VEND-001"),
+                null
         );
 
         assertThat(document.id()).isNotNull();
@@ -37,7 +38,8 @@ class DocumentTest {
                 Priority.NORMAL,
                 Instant.now(),
                 Instant.now(),
-                0L
+                0L,
+                null
         )).isInstanceOf(NullPointerException.class);
     }
 }

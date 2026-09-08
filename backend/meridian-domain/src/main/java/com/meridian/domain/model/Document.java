@@ -14,13 +14,14 @@ public record Document(
         Priority priority,
         Instant createdAt,
         Instant updatedAt,
-        long version
+        long version,
+        String idempotencyKey
 ) {
     public Document {
         Objects.requireNonNull(id, "id cannot be null");
     }
 
-    public static Document create(String contentHash, DocumentType type, Map<String, String> metadata) {
+    public static Document create(String contentHash, DocumentType type, Map<String, String> metadata, String idempotencyKey) {
         return new Document(
                 DocumentId.generate(),
                 contentHash,
@@ -30,7 +31,8 @@ public record Document(
                 Priority.NORMAL,
                 Instant.now(),
                 Instant.now(),
-                0L
+                0L,
+                idempotencyKey
         );
     }
 }

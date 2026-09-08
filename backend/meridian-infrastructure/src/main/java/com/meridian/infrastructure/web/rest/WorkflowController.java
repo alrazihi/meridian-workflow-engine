@@ -5,7 +5,6 @@ import com.meridian.application.port.inbound.QueryWorkflowStatusUseCase;
 import com.meridian.infrastructure.web.dto.CompleteTaskRequest;
 import com.meridian.infrastructure.web.dto.WorkflowStatusResponse;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -25,7 +24,7 @@ public class WorkflowController {
     @GetMapping("/workflows/{workflowId}")
     @PreAuthorize("hasRole('OPERATOR') or hasRole('REVIEWER') or hasRole('ADMIN')")
     public ResponseEntity<WorkflowStatusResponse> getWorkflowStatus(@PathVariable String workflowId) {
-        WorkflowStatusResponse response = WorkflowStatusResponse.from(null);
+        WorkflowStatusResponse response = queryWorkflowStatusUseCase.getStatus(workflowId);
         return ResponseEntity.ok(response);
     }
 
@@ -36,7 +35,7 @@ public class WorkflowController {
             @PathVariable String taskId,
             @Valid @RequestBody CompleteTaskRequest request
     ) {
-        WorkflowStatusResponse response = WorkflowStatusResponse.from(null);
+        WorkflowStatusResponse response = completeTaskUseCase.completeTask(workflowId, taskId, request.decision(), request.comments());
         return ResponseEntity.ok(response);
     }
 }

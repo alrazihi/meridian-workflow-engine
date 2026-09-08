@@ -1,6 +1,7 @@
 package com.meridian.infrastructure.web.dto;
 
 import com.meridian.domain.model.WorkflowInstance;
+import com.meridian.domain.model.WorkflowTask;
 
 import java.time.Instant;
 
@@ -8,6 +9,7 @@ public record WorkflowStatusResponse(
         String workflowId,
         String documentId,
         String state,
+        TaskResponse currentTask,
         Instant startedAt,
         Instant completedAt
 ) {
@@ -15,10 +17,15 @@ public record WorkflowStatusResponse(
         if (instance == null) {
             return null;
         }
+        WorkflowTask currentTask = instance.tasks().stream()
+                .filter(t -> !"COMPLETED".equals(t.status()) && !"SKIPPED".equals(t.status()))
+                .findFirst()
+                .orElse(null);
         return new WorkflowStatusResponse(
                 instance.id().value(),
                 instance.documentId().value(),
                 instance.state(),
+                currentTask != null ? TaskResponse.from(currentTask) : null,
                 instance.startedAt(),
                 instance.completedAt()
         );

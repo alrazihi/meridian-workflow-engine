@@ -10,16 +10,12 @@ import com.meridian.domain.model.DocumentEvent;
 import com.meridian.domain.model.DocumentStatus;
 import com.meridian.domain.model.DocumentType;
 import com.meridian.domain.service.DocumentValidator;
-import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
 import java.util.Map;
 
-@Service
 public class DefaultDocumentIngestionService implements IngestDocumentUseCase {
 
     private final DocumentRepository documentRepository;
@@ -42,34 +38,35 @@ public class DefaultDocumentIngestionService implements IngestDocumentUseCase {
     }
 
     @Override
-    public Document ingest(MultipartFile file, DocumentType type, String priority, Map<String, Object> metadata, String idempotencyKey) {
-        try {
-            String contentHash = computeHash(file.getBytes());
-            Map<String, String> stringMetadata = metadata.entrySet().stream()
-                    .collect(java.util.stream.Collectors.toMap(
-                            Map.Entry::getKey,
-                            e -> e.getValue() != null ? e.getValue().toString() : null
-                    ));
-            Document document = Document.create(contentHash, type, stringMetadata);
-            DocumentValidator.ValidationResult validationResult = documentValidator.validate(document);
+    public Document ingest(byte[] fileContent, DocumentType type, String priority, Map<String, Object> metadata, String idempotencyKey) {
+        String contentHash = computeHash(fileContent);
+        Map<String, String> stringMetadata = metadata.entrySet().stream()
+                .collect(java.util.stream.Collectors.toMap(
+                        Map.Entry::getKey,
+                        e -> e.getValue() != null ? e.getValue().toString() : null
+                ));
 
-            if (!validationResult.isValid()) {
-                throw new IllegalArgumentException(validationResult.errorMessage());
-            }
-
-            Document saved = documentRepository.save(document);
-            DocumentEvent createdEvent = DocumentEvent.create(
-                    saved.id(),
-                    "DOCUMENT_CREATED",
-                    "{}",
-                    saved.id().value()
-            );
-            eventPublisher.publish(createdEvent);
-
-            return saved;
-        } catch (IOException e) {
-            throw new IllegalStateException("Failed to process document", e);
+        if (idempotencyKey != null && documentRepository.existsByIdempotencyKey(idempotencyKey)) {
+            throw new IllegalArgumentException("Duplicate idempotency key: " + idempotencyKey);
         }
+
+        Document document = Document.create(contentHash, type, stringMetadata, idempotencyKey);
+        DocumentValidator.ValidationResult validationResult = documentValidator.validate(document);
+
+        if (!validationResult.isValid()) {
+            throw new IllegalArgumentException(validationResult.errorMessage());
+        }
+
+        Document saved = documentRepository.save(document);
+        DocumentEvent createdEvent = DocumentEvent.create(
+                saved.id(),
+                "DOCUMENT_CREATED",
+                "{}",
+                saved.id().value()
+        );
+        eventPublisher.publish(createdEvent);
+
+        return saved;
     }
 
     private String computeHash(byte[] bytes) {

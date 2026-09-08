@@ -20,7 +20,8 @@ class DocumentValidatorTest {
         Document document = Document.create(
                 "abc123",
                 DocumentType.INVOICE,
-                Map.of("vendorId", "VEND-001")
+                Map.of("vendorId", "VEND-001"),
+                null
         );
 
         DocumentValidator.ValidationResult result = validator.validate(document);
@@ -39,7 +40,8 @@ class DocumentValidatorTest {
                 com.meridian.domain.model.Priority.NORMAL,
                 java.time.Instant.now(),
                 java.time.Instant.now(),
-                0L
+                0L,
+                null
         );
 
         assertThatThrownBy(() -> validator.validate(document))

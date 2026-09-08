@@ -46,8 +46,8 @@
 #### Domain Layer (`meridian-domain`)
 - Pure Java, zero framework dependencies
 - Aggregates: `Document`, `WorkflowInstance`
-- Value Objects: `DocumentId`, `WorkflowId`, `Money`, `DocumentReference`
-- Domain Services: `DocumentValidator`, `WorkflowRouter`, `CompensationManager`
+- Value Objects: `DocumentId`, `WorkflowId`
+- Domain Services: `DocumentValidator`
 - Exceptions: `DomainException`, `WorkflowTransitionException`
 
 #### Application Layer (`meridian-application`)
@@ -56,22 +56,25 @@
   - `StartWorkflowUseCase`
   - `CompleteTaskUseCase`
   - `QueryWorkflowStatusUseCase`
+  - `QueryDocumentUseCase`
 - **Outbound Ports** (interfaces):
   - `DocumentRepository`
   - `EventPublisher`
   - `NotificationService`
+  - `TaskRepository`
+  - `WorkflowInstanceRepository`
 - **Services**: orchestration without framework coupling
 
 #### Infrastructure Layer (`meridian-infrastructure`)
-- **Persistence**: JPA entities, Flyway migrations, Spring Data repositories
-- **Messaging**: Kafka producer/consumer, Avro schema management
-- **Security**: JWT authentication converter, method security config
-- **Web**: REST controllers, DTOs, exception handlers, OpenAPI config
+- **Persistence**: JPA entities, Flyway migrations, Spring Data repositories, port adapters
+- **Messaging**: Kafka producer/consumer
+- **Security**: JWT resource server configuration, method security
+- **Web**: REST controllers, DTOs, exception handlers
 
 #### Presentation Layer (`meridian-workflow-service`)
 - Spring Boot application entry point
-- Configuration classes (Jackson, security, Kafka, Actuator)
-- Cross-cutting concerns: logging, metrics, tracing
+- Configuration classes (security, Kafka, Actuator)
+- Cross-cutting concerns: logging, metrics
 
 ## Design Principles
 

@@ -59,12 +59,11 @@ docker compose up --build
 - **Hexagonal Architecture** with strict dependency boundaries
 - **Domain-Driven Design** with aggregates, value objects, and domain services
 - **Event-Driven Workflow** with Kafka for asynchronous processing
-- **CQRS** for read/write separation on high-volume queries
-- **Saga Pattern** for distributed transaction compensation
-- **OAuth2 Resource Server** with fine-grained ABAC
+- **CQRS** — planned for workflow query optimization
+- **OAuth2 Resource Server** with role-based access control
 - **Testcontainers** for integration testing
 - **Flyway** for versioned database migrations
-- **Micrometer + OpenTelemetry** for observability
+- **Prometheus + Actuator** for observability
 
 ## Project Structure
 

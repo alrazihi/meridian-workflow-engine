@@ -2,12 +2,10 @@ package com.meridian.infrastructure.web.rest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.meridian.application.port.inbound.IngestDocumentUseCase;
-import com.meridian.application.port.inbound.QueryWorkflowStatusUseCase;
+import com.meridian.application.port.inbound.QueryDocumentUseCase;
 import com.meridian.domain.model.Document;
 import com.meridian.domain.model.DocumentType;
 import com.meridian.infrastructure.web.dto.DocumentResponse;
-import com.meridian.infrastructure.web.dto.WorkflowStatusResponse;
-import jakarta.validation.constraints.NotBlank;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -22,12 +20,12 @@ import java.util.Map;
 public class DocumentController {
 
     private final IngestDocumentUseCase ingestDocumentUseCase;
-    private final QueryWorkflowStatusUseCase queryWorkflowStatusUseCase;
+    private final QueryDocumentUseCase queryDocumentUseCase;
     private final ObjectMapper objectMapper;
 
-    public DocumentController(IngestDocumentUseCase ingestDocumentUseCase, QueryWorkflowStatusUseCase queryWorkflowStatusUseCase, ObjectMapper objectMapper) {
+    public DocumentController(IngestDocumentUseCase ingestDocumentUseCase, QueryDocumentUseCase queryDocumentUseCase, ObjectMapper objectMapper) {
         this.ingestDocumentUseCase = ingestDocumentUseCase;
-        this.queryWorkflowStatusUseCase = queryWorkflowStatusUseCase;
+        this.queryDocumentUseCase = queryDocumentUseCase;
         this.objectMapper = objectMapper;
     }
 
@@ -49,7 +47,7 @@ public class DocumentController {
             }
         }
 
-        Document document = ingestDocumentUseCase.ingest(file, type, priority, metadata, idempotencyKey);
+        Document document = ingestDocumentUseCase.ingest(file.getBytes(), type, priority, metadata, idempotencyKey);
         DocumentResponse response = DocumentResponse.from(document);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -57,7 +55,8 @@ public class DocumentController {
     @GetMapping("/documents/{documentId}")
     @PreAuthorize("hasRole('OPERATOR') or hasRole('REVIEWER') or hasRole('ADMIN')")
     public ResponseEntity<DocumentResponse> getDocument(@PathVariable String documentId) {
-        DocumentResponse response = DocumentResponse.from(null);
+        Document document = queryDocumentUseCase.getDocument(new com.meridian.domain.model.valueobjects.DocumentId(documentId));
+        DocumentResponse response = DocumentResponse.from(document);
         return ResponseEntity.ok(response);
     }
 }

@@ -11,25 +11,28 @@ import com.meridian.domain.model.DocumentEvent;
 import com.meridian.domain.model.WorkflowInstance;
 import com.meridian.domain.model.WorkflowTask;
 import com.meridian.domain.service.DocumentValidator;
-import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 
-@Service
 public class DefaultWorkflowOrchestrator implements StartWorkflowUseCase, CompleteTaskUseCase {
 
     private final DocumentRepository documentRepository;
+    private final WorkflowInstanceRepository workflowInstanceRepository;
+    private final TaskRepository taskRepository;
     private final EventPublisher eventPublisher;
     private final NotificationService notificationService;
     private final DocumentValidator documentValidator;
 
     public DefaultWorkflowOrchestrator(
             DocumentRepository documentRepository,
+            WorkflowInstanceRepository workflowInstanceRepository,
+            TaskRepository taskRepository,
             EventPublisher eventPublisher,
             NotificationService notificationService,
             DocumentValidator documentValidator) {
         this.documentRepository = documentRepository;
+        this.workflowInstanceRepository = workflowInstanceRepository;
+        this.taskRepository = taskRepository;
         this.eventPublisher = eventPublisher;
         this.notificationService = notificationService;
         this.documentValidator = documentValidator;
@@ -49,10 +52,24 @@ public class DefaultWorkflowOrchestrator implements StartWorkflowUseCase, Comple
 
         WorkflowInstance instance = WorkflowInstance.start(docId, documentId);
         WorkflowTask reviewTask = WorkflowTask.create(instance.id(), "group:reviewers", "REVIEW");
-        reviewTask.assign();
+        reviewTask = reviewTask.assign();
+        taskRepository.save(reviewTask);
 
-        List<WorkflowTask> tasks = new ArrayList<>();
-        tasks.add(reviewTask);
+        List<WorkflowTask> tasks = taskRepository.findByWorkflowId(instance.id());
+        WorkflowInstance instanceWithTasks = new WorkflowInstance(
+                instance.id(),
+                instance.documentId(),
+                instance.state(),
+                instance.context(),
+                instance.correlationId(),
+                instance.startedAt(),
+                instance.completedAt(),
+                instance.version(),
+                instance.createdAt(),
+                tasks
+        );
+
+        workflowInstanceRepository.save(instanceWithTasks);
 
         DocumentEvent event = DocumentEvent.create(
                 docId,
@@ -63,21 +80,37 @@ public class DefaultWorkflowOrchestrator implements StartWorkflowUseCase, Comple
         eventPublisher.publish(event);
         notificationService.notifyTaskAssigned("group:reviewers", reviewTask.id(), "REVIEW");
 
-        return instance;
+        return instanceWithTasks;
     }
 
     @Override
     public WorkflowInstance completeTask(String workflowId, String taskId, String decision, String comments) {
-        WorkflowInstance instance = getStatus(workflowId);
-        WorkflowTask task = instance.tasks().stream()
-                .filter(t -> t.id().equals(taskId))
-                .findFirst()
+        WorkflowTask task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new IllegalArgumentException("Task not found: " + taskId));
 
         WorkflowTask completedTask = task.complete("current-user", comments);
+        taskRepository.save(completedTask);
+
+        WorkflowInstance instance = workflowInstanceRepository.findById(new WorkflowId(workflowId))
+                .orElseThrow(() -> new IllegalArgumentException("Workflow not found: " + workflowId));
+
+        List<WorkflowTask> tasks = taskRepository.findByWorkflowId(new WorkflowId(workflowId));
+        instance = new WorkflowInstance(
+                instance.id(),
+                instance.documentId(),
+                instance.state(),
+                instance.context(),
+                instance.correlationId(),
+                instance.startedAt(),
+                instance.completedAt(),
+                instance.version(),
+                instance.createdAt(),
+                tasks
+        );
 
         if ("APPROVED".equals(decision)) {
             WorkflowInstance updated = instance.withState("COMPLETED");
+            workflowInstanceRepository.save(updated);
             DocumentEvent event = DocumentEvent.create(
                     instance.documentId(),
                     "WORKFLOW_COMPLETED",
@@ -88,6 +121,7 @@ public class DefaultWorkflowOrchestrator implements StartWorkflowUseCase, Comple
             return updated;
         } else {
             WorkflowInstance updated = instance.withState("REJECTED");
+            workflowInstanceRepository.save(updated);
             DocumentEvent event = DocumentEvent.create(
                     instance.documentId(),
                     "WORKFLOW_REJECTED",
@@ -99,7 +133,10 @@ public class DefaultWorkflowOrchestrator implements StartWorkflowUseCase, Comple
         }
     }
 
+    @Override
     public WorkflowInstance getStatus(String workflowId) {
-        return null;
+        WorkflowId workflowIdVo = WorkflowId.from(workflowId);
+        return workflowInstanceRepository.findById(workflowIdVo)
+                .orElseThrow(() -> new IllegalArgumentException("Workflow not found: " + workflowId));
     }
 }
