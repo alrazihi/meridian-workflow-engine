@@ -34,6 +34,31 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
+                <groupId>io.swagger.core.v3</groupId>
+                <artifactId>swagger-annotations</artifactId>
+                <version>2.2.21</version>
+            </dependency>
+            <dependency>
+                <groupId>com.meridian</groupId>
+                <artifactId>meridian-domain</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.meridian</groupId>
+                <artifactId>meridian-application</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.meridian</groupId>
+                <artifactId>meridian-infrastructure</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.meridian</groupId>
+                <artifactId>meridian-workflow-service</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-dependencies</artifactId>
                 <version>${spring-boot.version}</version>
@@ -76,3 +101,9 @@
         </plugins>
     </build>
 </project>
+
+
+
+
+
+

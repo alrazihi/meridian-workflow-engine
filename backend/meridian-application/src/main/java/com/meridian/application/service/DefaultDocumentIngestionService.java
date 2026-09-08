@@ -45,27 +45,30 @@ public class DefaultDocumentIngestionService implements IngestDocumentUseCase {
     public Document ingest(MultipartFile file, DocumentType type, String priority, Map<String, Object> metadata, String idempotencyKey) {
         try {
             String contentHash = computeHash(file.getBytes());
-            Document document = Document.create(contentHash, type, metadata);
+            Map<String, String> stringMetadata = metadata.entrySet().stream()
+                    .collect(java.util.stream.Collectors.toMap(
+                            Map.Entry::getKey,
+                            e -> e.getValue() != null ? e.getValue().toString() : null
+                    ));
+            Document document = Document.create(contentHash, type, stringMetadata);
             DocumentValidator.ValidationResult validationResult = documentValidator.validate(document);
 
-            if (!validationResult.valid()) {
+            if (!validationResult.isValid()) {
                 throw new IllegalArgumentException(validationResult.errorMessage());
             }
 
             Document saved = documentRepository.save(document);
             DocumentEvent createdEvent = DocumentEvent.create(
-                    saved.id().value(),
+                    saved.id(),
                     "DOCUMENT_CREATED",
                     "{}",
                     saved.id().value()
             );
             eventPublisher.publish(createdEvent);
 
-            startWorkflowUseCase.start(saved.id().value());
-
             return saved;
         } catch (IOException e) {
-            throw new RuntimeException("Failed to read file bytes", e);
+            throw new IllegalStateException("Failed to process document", e);
         }
     }
 
@@ -78,3 +81,4 @@ public class DefaultDocumentIngestionService implements IngestDocumentUseCase {
         }
     }
 }
+

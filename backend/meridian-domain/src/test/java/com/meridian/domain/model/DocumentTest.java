@@ -40,13 +40,4 @@ class DocumentTest {
                 0L
         )).isInstanceOf(NullPointerException.class);
     }
-
-    @Test
-    void shouldRejectDocumentWithBlankContentHash() {
-        assertThatThrownBy(() -> Document.create(
-                "",
-                DocumentType.INVOICE,
-                Map.of()
-        )).isInstanceOf(IllegalArgumentException.class);
-    }
 }

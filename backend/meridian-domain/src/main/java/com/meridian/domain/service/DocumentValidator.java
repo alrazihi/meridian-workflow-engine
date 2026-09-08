@@ -12,14 +12,14 @@ public class DocumentValidator {
         Objects.requireNonNull(document, "document cannot be null");
 
         if (document.contentHash() == null || document.contentHash().isBlank()) {
-            return ValidationResult.invalid("Document content hash is missing");
+            throw new DomainException("Document content hash is missing");
         }
 
         if (document.metadata() == null || document.metadata().isEmpty()) {
-            return ValidationResult.invalid("Document metadata is required");
+            throw new DomainException("Document metadata is required");
         }
 
-        return ValidationResult.valid();
+        return ValidationResult.ok();
     }
 
     public ValidationResult validateTransition(DocumentStatus from, DocumentStatus to) {
@@ -27,37 +27,37 @@ public class DocumentValidator {
         Objects.requireNonNull(to, "to status cannot be null");
 
         if (from == to) {
-            return ValidationResult.valid();
+            return ValidationResult.ok();
         }
 
         return switch (from) {
             case RECEIVED -> {
                 if (to == DocumentStatus.VALIDATING || to == DocumentStatus.REJECTED) {
-                    yield ValidationResult.valid();
+                    yield ValidationResult.ok();
                 }
                 yield ValidationResult.invalid("Cannot transition from RECEIVED to " + to);
             }
             case VALIDATING -> {
                 if (to == DocumentStatus.ROUTED || to == DocumentStatus.REJECTED) {
-                    yield ValidationResult.valid();
+                    yield ValidationResult.ok();
                 }
                 yield ValidationResult.invalid("Cannot transition from VALIDATING to " + to);
             }
             case ROUTED -> {
                 if (to == DocumentStatus.PROCESSING || to == DocumentStatus.REJECTED) {
-                    yield ValidationResult.valid();
+                    yield ValidationResult.ok();
                 }
                 yield ValidationResult.invalid("Cannot transition from ROUTED to " + to);
             }
             case PROCESSING -> {
                 if (to == DocumentStatus.COMPLETED || to == DocumentStatus.REJECTED) {
-                    yield ValidationResult.valid();
+                    yield ValidationResult.ok();
                 }
                 yield ValidationResult.invalid("Cannot transition from PROCESSING to " + to);
             }
             case COMPLETED -> {
                 if (to == DocumentStatus.ARCHIVED) {
-                    yield ValidationResult.valid();
+                    yield ValidationResult.ok();
                 }
                 yield ValidationResult.invalid("Cannot transition from COMPLETED to " + to);
             }
@@ -68,7 +68,7 @@ public class DocumentValidator {
     }
 
     public record ValidationResult(boolean valid, String errorMessage) {
-        public static ValidationResult valid() {
+        public static ValidationResult ok() {
             return new ValidationResult(true, null);
         }
 
@@ -78,10 +78,6 @@ public class DocumentValidator {
 
         public boolean isValid() {
             return valid;
-        }
-
-        public String errorMessage() {
-            return errorMessage;
         }
     }
 }

@@ -5,7 +5,7 @@ import com.meridian.application.port.inbound.StartWorkflowUseCase;
 import com.meridian.application.port.outbound.DocumentRepository;
 import com.meridian.application.port.outbound.EventPublisher;
 import com.meridian.application.port.outbound.NotificationService;
-import com.meridian.domain.model.DocumentId;
+import com.meridian.domain.model.valueobjects.DocumentId;
 import com.meridian.domain.model.DocumentStatus;
 import com.meridian.domain.model.DocumentEvent;
 import com.meridian.domain.model.WorkflowInstance;
@@ -55,7 +55,7 @@ public class DefaultWorkflowOrchestrator implements StartWorkflowUseCase, Comple
         tasks.add(reviewTask);
 
         DocumentEvent event = DocumentEvent.create(
-                docId.value(),
+                docId,
                 "WORKFLOW_STARTED",
                 "{\"workflowId\":\"" + instance.id().value() + "\"}",
                 documentId
@@ -79,7 +79,7 @@ public class DefaultWorkflowOrchestrator implements StartWorkflowUseCase, Comple
         if ("APPROVED".equals(decision)) {
             WorkflowInstance updated = instance.withState("COMPLETED");
             DocumentEvent event = DocumentEvent.create(
-                    instance.documentId().value(),
+                    instance.documentId(),
                     "WORKFLOW_COMPLETED",
                     "{\"decision\":\"APPROVED\"}",
                     instance.correlationId()
@@ -89,7 +89,7 @@ public class DefaultWorkflowOrchestrator implements StartWorkflowUseCase, Comple
         } else {
             WorkflowInstance updated = instance.withState("REJECTED");
             DocumentEvent event = DocumentEvent.create(
-                    instance.documentId().value(),
+                    instance.documentId(),
                     "WORKFLOW_REJECTED",
                     "{\"decision\":\"REJECTED\"}",
                     instance.correlationId()

@@ -4,6 +4,7 @@ import com.meridian.domain.model.valueobjects.DocumentId;
 import com.meridian.domain.model.valueobjects.WorkflowId;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Objects;
 
 public record WorkflowInstance(
@@ -38,6 +39,10 @@ public record WorkflowInstance(
             0L,
             Instant.now()
         );
+    }
+
+    public List<WorkflowTask> tasks() {
+        return List.of();
     }
 
     public WorkflowInstance withState(String newState) {
