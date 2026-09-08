@@ -1,6 +1,7 @@
 package com.meridian.infrastructure.messaging.kafka;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.meridian.application.port.outbound.EventPublisher;
 import com.meridian.domain.model.DocumentEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
