@@ -3,6 +3,7 @@ package com.meridian.infrastructure.messaging.kafka;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.meridian.application.port.outbound.EventPublisher;
 import com.meridian.domain.model.DocumentEvent;
+import com.meridian.infrastructure.observability.WorkflowMetrics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -19,16 +20,19 @@ public class KafkaEventPublisher implements EventPublisher {
     private final String documentEventsTopic;
     private final String workflowTasksTopic;
     private final String workflowCompletedTopic;
+    private final WorkflowMetrics workflowMetrics;
 
     public KafkaEventPublisher(KafkaTemplate<String, String> kafkaTemplate, ObjectMapper objectMapper,
                                @Value("${spring.kafka.topics.document-events}") String documentEventsTopic,
                                @Value("${spring.kafka.topics.workflow-tasks}") String workflowTasksTopic,
-                               @Value("${spring.kafka.topics.workflow-completed}") String workflowCompletedTopic) {
+                               @Value("${spring.kafka.topics.workflow-completed}") String workflowCompletedTopic,
+                               WorkflowMetrics workflowMetrics) {
         this.kafkaTemplate = kafkaTemplate;
         this.objectMapper = objectMapper;
         this.documentEventsTopic = documentEventsTopic;
         this.workflowTasksTopic = workflowTasksTopic;
         this.workflowCompletedTopic = workflowCompletedTopic;
+        this.workflowMetrics = workflowMetrics;
     }
 
     @Override
@@ -46,6 +50,7 @@ public class KafkaEventPublisher implements EventPublisher {
             log.info("Published event {} to topic {} for document {}", event.eventType(), topic, event.documentId());
         } catch (Exception e) {
             log.error("Failed to publish event for document {}", event.documentId(), e);
+            workflowMetrics.incrementEventPublishFailure();
             throw new RuntimeException("Failed to publish event", e);
         }
     }

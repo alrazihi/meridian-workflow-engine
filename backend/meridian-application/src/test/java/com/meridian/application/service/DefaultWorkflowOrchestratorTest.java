@@ -5,6 +5,7 @@ import com.meridian.application.port.outbound.EventPublisher;
 import com.meridian.application.port.outbound.NotificationService;
 import com.meridian.application.port.outbound.TaskRepository;
 import com.meridian.application.port.outbound.WorkflowInstanceRepository;
+import com.meridian.application.port.outbound.AuditService;
 import com.meridian.domain.model.Document;
 import com.meridian.domain.model.DocumentEvent;
 import com.meridian.domain.model.DocumentStatus;
@@ -15,6 +16,7 @@ import com.meridian.domain.model.WorkflowTask;
 import com.meridian.domain.model.valueobjects.DocumentId;
 import com.meridian.domain.model.valueobjects.WorkflowId;
 import com.meridian.domain.service.DocumentValidator;
+import com.meridian.infrastructure.observability.WorkflowMetrics;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -48,6 +50,9 @@ class DefaultWorkflowOrchestratorTest {
 
     @Mock
     private NotificationService notificationService;
+
+    @Mock
+    private AuditService auditService;
 
     @InjectMocks
     private DefaultWorkflowOrchestrator orchestrator;

@@ -3,11 +3,13 @@ package com.meridian.application.service;
 import com.meridian.application.port.outbound.DocumentRepository;
 import com.meridian.application.port.outbound.EventPublisher;
 import com.meridian.application.port.outbound.NotificationService;
+import com.meridian.application.port.outbound.AuditService;
 import com.meridian.domain.model.Document;
 import com.meridian.domain.model.DocumentEvent;
 import com.meridian.domain.model.DocumentStatus;
 import com.meridian.domain.model.DocumentType;
 import com.meridian.domain.service.DocumentValidator;
+import com.meridian.infrastructure.observability.WorkflowMetrics;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -37,11 +39,15 @@ class DefaultDocumentIngestionServiceTest {
     @Mock
     private NotificationService notificationService;
 
+    @Mock
+    private AuditService auditService;
+
     @Test
     void shouldIngestValidDocument() {
         DocumentValidator validator = new DocumentValidator();
+        WorkflowMetrics workflowMetrics = new WorkflowMetrics(new io.micrometer.core.instrument.simple.SimpleMeterRegistry());
         DefaultDocumentIngestionService service = new DefaultDocumentIngestionService(
-                documentRepository, eventPublisher, validator, notificationService);
+                documentRepository, eventPublisher, validator, notificationService, workflowMetrics, auditService);
 
         Document saved = Document.create("hash123", DocumentType.INVOICE, Map.of("vendorId", "VEND-001"), null, "test-tenant");
         when(documentRepository.save(any(Document.class))).thenReturn(saved);
@@ -57,8 +63,9 @@ class DefaultDocumentIngestionServiceTest {
     @Test
     void shouldRejectDuplicateIdempotencyKey() {
         DocumentValidator validator = new DocumentValidator();
+        WorkflowMetrics workflowMetrics = new WorkflowMetrics(new io.micrometer.core.instrument.simple.SimpleMeterRegistry());
         DefaultDocumentIngestionService service = new DefaultDocumentIngestionService(
-                documentRepository, eventPublisher, validator, notificationService);
+                documentRepository, eventPublisher, validator, notificationService, workflowMetrics, auditService);
 
         when(documentRepository.existsByIdempotencyKey("key-123")).thenReturn(true);
 
@@ -73,8 +80,9 @@ class DefaultDocumentIngestionServiceTest {
     @Test
     void shouldRejectInvalidDocumentByValidator() {
         DocumentValidator validator = new DocumentValidator();
+        WorkflowMetrics workflowMetrics = new WorkflowMetrics(new io.micrometer.core.instrument.simple.SimpleMeterRegistry());
         DefaultDocumentIngestionService service = new DefaultDocumentIngestionService(
-                documentRepository, eventPublisher, validator, notificationService);
+                documentRepository, eventPublisher, validator, notificationService, workflowMetrics, auditService);
 
         when(documentRepository.existsByIdempotencyKey(anyString())).thenReturn(false);
 
@@ -89,8 +97,9 @@ class DefaultDocumentIngestionServiceTest {
     @Test
     void shouldPublishEventAfterSuccessfulIngest() {
         DocumentValidator validator = new DocumentValidator();
+        WorkflowMetrics workflowMetrics = new WorkflowMetrics(new io.micrometer.core.instrument.simple.SimpleMeterRegistry());
         DefaultDocumentIngestionService service = new DefaultDocumentIngestionService(
-                documentRepository, eventPublisher, validator, notificationService);
+                documentRepository, eventPublisher, validator, notificationService, workflowMetrics, auditService);
 
         Document saved = Document.create("hash123", DocumentType.INVOICE, Map.of("vendorId", "VEND-001"), null, "test-tenant");
         when(documentRepository.save(any(Document.class))).thenReturn(saved);
@@ -107,8 +116,9 @@ class DefaultDocumentIngestionServiceTest {
     @Test
     void shouldComputeSha256Hash() {
         DocumentValidator validator = new DocumentValidator();
+        WorkflowMetrics workflowMetrics = new WorkflowMetrics(new io.micrometer.core.instrument.simple.SimpleMeterRegistry());
         DefaultDocumentIngestionService service = new DefaultDocumentIngestionService(
-                documentRepository, eventPublisher, validator, notificationService);
+                documentRepository, eventPublisher, validator, notificationService, workflowMetrics, auditService);
 
         Document saved = Document.create("hash123", DocumentType.INVOICE, Map.of("vendorId", "VEND-001"), null, "test-tenant");
         when(documentRepository.save(any(Document.class))).thenReturn(saved);
@@ -123,8 +133,9 @@ class DefaultDocumentIngestionServiceTest {
     @Test
     void shouldAllowNullIdempotencyKey() {
         DocumentValidator validator = new DocumentValidator();
+        WorkflowMetrics workflowMetrics = new WorkflowMetrics(new io.micrometer.core.instrument.simple.SimpleMeterRegistry());
         DefaultDocumentIngestionService service = new DefaultDocumentIngestionService(
-                documentRepository, eventPublisher, validator, notificationService);
+                documentRepository, eventPublisher, validator, notificationService, workflowMetrics, auditService);
 
         Document saved = Document.create("hash123", DocumentType.INVOICE, Map.of("vendorId", "VEND-001"), null, "test-tenant");
         when(documentRepository.save(any(Document.class))).thenReturn(saved);

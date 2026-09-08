@@ -7,8 +7,10 @@ import com.meridian.domain.model.Document;
 import com.meridian.domain.model.DocumentStatus;
 import com.meridian.domain.model.valueobjects.DocumentId;
 import com.meridian.infrastructure.cache.CachingDocumentQueryService;
+import com.meridian.infrastructure.web.filter.CorrelationIdFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
@@ -32,13 +34,19 @@ public class DocumentEventConsumer {
 
     @KafkaListener(topics = {"document.events", "workflow.tasks", "workflow.completed"}, groupId = "meridian-workflow-service")
     public void onDocumentEvent(String message) {
+        String correlationId = null;
         try {
             Map<String, Object> event = objectMapper.readValue(message, Map.class);
             String eventType = (String) event.get("eventType");
             String documentId = (String) event.get("documentId");
+            correlationId = (String) event.get("correlationId");
+
+            if (correlationId != null && !correlationId.isBlank()) {
+                MDC.put(CorrelationIdFilter.CORRELATION_ID_MDC_KEY, correlationId);
+            }
 
             if (documentId == null) {
-                log.warn("Received event without documentId: {}", eventType);
+                log.warn("Received event without documentId: eventType={}", eventType);
                 return;
             }
 
@@ -49,8 +57,12 @@ public class DocumentEventConsumer {
                 default -> log.debug("Unhandled event type: {}", eventType);
             }
         } catch (Exception e) {
-            log.error("Failed to process document event: {}", message, e);
+            log.error("Failed to process document event: event={}", message, e);
             throw new RuntimeException("Failed to process document event", e);
+        } finally {
+            if (correlationId != null) {
+                MDC.remove(CorrelationIdFilter.CORRELATION_ID_MDC_KEY);
+            }
         }
     }
 

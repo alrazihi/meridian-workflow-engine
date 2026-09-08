@@ -8,7 +8,9 @@ import com.meridian.domain.model.Document;
 import com.meridian.domain.model.DocumentEvent;
 import com.meridian.domain.model.DocumentStatus;
 import com.meridian.domain.model.DocumentType;
+import com.meridian.domain.model.AuditLog;
 import com.meridian.domain.service.DocumentValidator;
+import com.meridian.infrastructure.observability.WorkflowMetrics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,16 +28,22 @@ public class DefaultDocumentIngestionService implements IngestDocumentUseCase {
     private final EventPublisher eventPublisher;
     private final DocumentValidator documentValidator;
     private final NotificationService notificationService;
+    private final WorkflowMetrics workflowMetrics;
+    private final AuditService auditService;
 
     public DefaultDocumentIngestionService(
             DocumentRepository documentRepository,
             EventPublisher eventPublisher,
             DocumentValidator documentValidator,
-            NotificationService notificationService) {
+            NotificationService notificationService,
+            WorkflowMetrics workflowMetrics,
+            AuditService auditService) {
         this.documentRepository = documentRepository;
         this.eventPublisher = eventPublisher;
         this.documentValidator = documentValidator;
         this.notificationService = notificationService;
+        this.workflowMetrics = workflowMetrics;
+        this.auditService = auditService;
     }
 
     @Override
@@ -49,6 +57,7 @@ public class DefaultDocumentIngestionService implements IngestDocumentUseCase {
                 ));
 
         if (idempotencyKey != null && documentRepository.existsByIdempotencyKey(idempotencyKey)) {
+            log.warn("Duplicate idempotency key rejected: idempotencyKey={}", idempotencyKey);
             throw new IllegalArgumentException("Duplicate idempotency key: " + idempotencyKey);
         }
 
@@ -56,10 +65,22 @@ public class DefaultDocumentIngestionService implements IngestDocumentUseCase {
         DocumentValidator.ValidationResult validationResult = documentValidator.validate(document);
 
         if (!validationResult.isValid()) {
+            log.warn("Document validation failed: {}", validationResult.errorMessage());
             throw new IllegalArgumentException(validationResult.errorMessage());
         }
 
         Document saved = documentRepository.save(document);
+        log.info("Document ingested: documentId={}, type={}, status={}, idempotencyKey={}",
+                saved.id().value(), type, DocumentStatus.RECEIVED, idempotencyKey);
+        workflowMetrics.incrementDocumentIngested();
+
+        auditService.log(AuditLog.create(
+                "system",
+                "DOCUMENT_INGESTED",
+                "DOCUMENT",
+                saved.id().value(),
+                Map.of("type", type.name(), "idempotencyKey", idempotencyKey)
+        ));
 
         publishEventAsync(() -> {
             DocumentEvent createdEvent = DocumentEvent.create(
