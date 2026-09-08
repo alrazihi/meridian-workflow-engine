@@ -9,6 +9,9 @@ import com.meridian.domain.model.DocumentEvent;
 import com.meridian.domain.model.DocumentStatus;
 import com.meridian.domain.model.DocumentType;
 import com.meridian.domain.service.DocumentValidator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -16,6 +19,8 @@ import java.util.HexFormat;
 import java.util.Map;
 
 public class DefaultDocumentIngestionService implements IngestDocumentUseCase {
+
+    private static final Logger log = LoggerFactory.getLogger(DefaultDocumentIngestionService.class);
 
     private final DocumentRepository documentRepository;
     private final EventPublisher eventPublisher;
@@ -34,6 +39,7 @@ public class DefaultDocumentIngestionService implements IngestDocumentUseCase {
     }
 
     @Override
+    @Transactional
     public Document ingest(byte[] fileContent, DocumentType type, String priority, Map<String, Object> metadata, String idempotencyKey) {
         String contentHash = computeHash(fileContent);
         Map<String, String> stringMetadata = metadata.entrySet().stream()
@@ -54,15 +60,26 @@ public class DefaultDocumentIngestionService implements IngestDocumentUseCase {
         }
 
         Document saved = documentRepository.save(document);
-        DocumentEvent createdEvent = DocumentEvent.create(
-                saved.id(),
-                "DOCUMENT_CREATED",
-                "{}",
-                saved.id().value()
-        );
-        eventPublisher.publish(createdEvent);
+
+        publishEventAsync(() -> {
+            DocumentEvent createdEvent = DocumentEvent.create(
+                    saved.id(),
+                    "DOCUMENT_CREATED",
+                    "{}",
+                    saved.id().value()
+            );
+            eventPublisher.publish(createdEvent);
+        });
 
         return saved;
+    }
+
+    private void publishEventAsync(Runnable action) {
+        try {
+            action.run();
+        } catch (Exception e) {
+            log.error("Failed to publish async side-effect for document ingestion", e);
+        }
     }
 
     private String computeHash(byte[] bytes) {

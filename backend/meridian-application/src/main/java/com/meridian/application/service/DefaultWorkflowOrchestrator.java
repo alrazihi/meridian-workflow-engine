@@ -10,12 +10,18 @@ import com.meridian.domain.model.DocumentStatus;
 import com.meridian.domain.model.DocumentEvent;
 import com.meridian.domain.model.TaskStatus;
 import com.meridian.domain.model.WorkflowInstance;
+import com.meridian.domain.model.WorkflowState;
 import com.meridian.domain.model.WorkflowTask;
 import com.meridian.domain.service.DocumentValidator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 public class DefaultWorkflowOrchestrator implements StartWorkflowUseCase, CompleteTaskUseCase {
+
+    private static final Logger log = LoggerFactory.getLogger(DefaultWorkflowOrchestrator.class);
 
     private final DocumentRepository documentRepository;
     private final WorkflowInstanceRepository workflowInstanceRepository;
@@ -40,6 +46,7 @@ public class DefaultWorkflowOrchestrator implements StartWorkflowUseCase, Comple
     }
 
     @Override
+    @Transactional
     public WorkflowInstance start(String documentId) {
         DocumentId docId = DocumentId.from(documentId);
         var document = documentRepository.findById(docId)
@@ -72,19 +79,22 @@ public class DefaultWorkflowOrchestrator implements StartWorkflowUseCase, Comple
 
         workflowInstanceRepository.save(instanceWithTasks);
 
-        DocumentEvent event = DocumentEvent.create(
-                docId,
-                "WORKFLOW_STARTED",
-                "{\"workflowId\":\"" + instance.id().value() + "\"}",
-                documentId
-        );
-        eventPublisher.publish(event);
-        notificationService.notifyTaskAssigned("group:reviewers", reviewTask.id(), "REVIEW");
+        publishEventAsync(() -> {
+            DocumentEvent event = DocumentEvent.create(
+                    docId,
+                    "WORKFLOW_STARTED",
+                    "{\"workflowId\":\"" + instance.id().value() + "\"}",
+                    documentId
+            );
+            eventPublisher.publish(event);
+            notificationService.notifyTaskAssigned("group:reviewers", reviewTask.id(), "REVIEW");
+        });
 
         return instanceWithTasks;
     }
 
     @Override
+    @Transactional
     public WorkflowInstance completeTask(String workflowId, String taskId, String decision, String comments) {
         WorkflowTask task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new IllegalArgumentException("Task not found: " + taskId));
@@ -115,35 +125,48 @@ public class DefaultWorkflowOrchestrator implements StartWorkflowUseCase, Comple
                 tasks
         );
 
+        WorkflowInstance updated;
+        DocumentEvent event;
         if ("APPROVED".equals(decision)) {
-            WorkflowInstance updated = instance.withState(WorkflowState.COMPLETED);
-            workflowInstanceRepository.save(updated);
-            DocumentEvent event = DocumentEvent.create(
+            updated = instance.withState(WorkflowState.COMPLETED);
+            event = DocumentEvent.create(
                     instance.documentId(),
                     "WORKFLOW_COMPLETED",
                     "{\"decision\":\"APPROVED\"}",
                     instance.correlationId()
             );
-            eventPublisher.publish(event);
-            return updated;
         } else {
-            WorkflowInstance updated = instance.withState(WorkflowState.REJECTED);
-            workflowInstanceRepository.save(updated);
-            DocumentEvent event = DocumentEvent.create(
+            updated = instance.withState(WorkflowState.REJECTED);
+            event = DocumentEvent.create(
                     instance.documentId(),
                     "WORKFLOW_REJECTED",
                     "{\"decision\":\"REJECTED\"}",
                     instance.correlationId()
             );
-            eventPublisher.publish(event);
-            return updated;
         }
+
+        workflowInstanceRepository.save(updated);
+
+        publishEventAsync(() -> {
+            eventPublisher.publish(event);
+        });
+
+        return updated;
     }
 
     @Override
+    @Transactional(readOnly = true)
     public WorkflowInstance getStatus(String workflowId) {
         WorkflowId workflowIdVo = WorkflowId.from(workflowId);
         return workflowInstanceRepository.findById(workflowIdVo)
                 .orElseThrow(() -> new IllegalArgumentException("Workflow not found: " + workflowId));
+    }
+
+    private void publishEventAsync(Runnable action) {
+        try {
+            action.run();
+        } catch (Exception e) {
+            log.error("Failed to publish async side-effect for workflow operation", e);
+        }
     }
 }
