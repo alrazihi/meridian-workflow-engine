@@ -10,6 +10,7 @@ import com.meridian.domain.model.DocumentEvent;
 import com.meridian.domain.model.DocumentStatus;
 import com.meridian.domain.model.DocumentType;
 import com.meridian.domain.model.WorkflowInstance;
+import com.meridian.domain.model.WorkflowState;
 import com.meridian.domain.model.WorkflowTask;
 import com.meridian.domain.model.valueobjects.DocumentId;
 import com.meridian.domain.model.valueobjects.WorkflowId;
@@ -71,7 +72,7 @@ class DefaultWorkflowOrchestratorTest {
         WorkflowInstance result = orchestrator.start("doc-123");
 
         assertThat(result).isNotNull();
-        assertThat(result.state()).isEqualTo("STARTED");
+        assertThat(result.state()).isEqualTo(WorkflowState.STARTED);
         assertThat(result.tasks()).hasSize(1);
         verify(eventPublisher).publish(any(DocumentEvent.class));
         verify(notificationService).notifyTaskAssigned(any(), any(), any());
@@ -107,7 +108,7 @@ class DefaultWorkflowOrchestratorTest {
 
         WorkflowInstance completed = orchestrator.completeTask(instance.id().value(), task.id(), "APPROVED", "Looks good");
 
-        assertThat(completed.state()).isEqualTo("COMPLETED");
+        assertThat(completed.state()).isEqualTo(WorkflowState.COMPLETED);
         verify(eventPublisher).publish(any(DocumentEvent.class));
     }
 
@@ -122,7 +123,7 @@ class DefaultWorkflowOrchestratorTest {
 
         WorkflowInstance rejected = orchestrator.completeTask(instance.id().value(), task.id(), "REJECTED", "Bad");
 
-        assertThat(rejected.state()).isEqualTo("REJECTED");
+        assertThat(rejected.state()).isEqualTo(WorkflowState.REJECTED);
     }
 
     @Test

@@ -5,6 +5,7 @@ import com.meridian.application.service.DefaultWorkflowOrchestrator;
 import com.meridian.domain.model.Document;
 import com.meridian.domain.model.DocumentType;
 import com.meridian.domain.model.WorkflowInstance;
+import com.meridian.domain.model.WorkflowState;
 import com.meridian.domain.model.WorkflowTask;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -127,6 +128,6 @@ class ConcurrencyIntegrationTest {
 
         WorkflowInstance finalState = workflowOrchestrator.getStatus(instance.id().value());
         assertThat(finalState).isNotNull();
-        assertThat(finalState.state()).isEqualTo("COMPLETED");
+        assertThat(finalState.state()).isEqualTo(WorkflowState.COMPLETED);
     }
 }

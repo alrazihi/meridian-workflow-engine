@@ -6,6 +6,7 @@ import com.meridian.application.port.outbound.DocumentRepository;
 import com.meridian.domain.model.Document;
 import com.meridian.domain.model.DocumentStatus;
 import com.meridian.domain.model.valueobjects.DocumentId;
+import com.meridian.infrastructure.cache.CachingDocumentQueryService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -19,11 +20,13 @@ public class DocumentEventConsumer {
     private static final Logger log = LoggerFactory.getLogger(DocumentEventConsumer.class);
     private final DocumentRepository documentRepository;
     private final DocumentReadRepository documentReadRepository;
+    private final CachingDocumentQueryService cachingDocumentQueryService;
     private final ObjectMapper objectMapper;
 
-    public DocumentEventConsumer(DocumentRepository documentRepository, DocumentReadRepository documentReadRepository, ObjectMapper objectMapper) {
+    public DocumentEventConsumer(DocumentRepository documentRepository, DocumentReadRepository documentReadRepository, CachingDocumentQueryService cachingDocumentQueryService, ObjectMapper objectMapper) {
         this.documentRepository = documentRepository;
         this.documentReadRepository = documentReadRepository;
+        this.cachingDocumentQueryService = cachingDocumentQueryService;
         this.objectMapper = objectMapper;
     }
 
@@ -54,6 +57,7 @@ public class DocumentEventConsumer {
     private void updateStatus(DocumentId documentId, DocumentStatus newStatus) {
         Document updated = documentRepository.updateStatus(documentId, newStatus);
         documentReadRepository.updateStatus(documentId, newStatus);
-        log.info("Updated document {} status to {} in write and read models", documentId.value(), newStatus);
+        cachingDocumentQueryService.evictDocument(documentId);
+        log.info("Updated document {} status to {} in write and read models; cache evicted", documentId.value(), newStatus);
     }
 }

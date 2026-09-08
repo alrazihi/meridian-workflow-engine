@@ -3,6 +3,7 @@ package com.meridian.infrastructure.persistence.repository;
 import com.meridian.domain.model.Document;
 import com.meridian.domain.model.DocumentType;
 import com.meridian.domain.model.WorkflowInstance;
+import com.meridian.domain.model.WorkflowState;
 import com.meridian.domain.model.WorkflowTask;
 import com.meridian.domain.model.valueobjects.DocumentId;
 import com.meridian.domain.model.valueobjects.WorkflowId;
@@ -49,7 +50,7 @@ class WorkflowInstanceRepositoryIntegrationTest {
 
         var found = jpaWorkflowInstanceRepository.findById(saved.id());
         assertThat(found).isPresent();
-        assertThat(found.get().state()).isEqualTo("STARTED");
+        assertThat(found.get().state()).isEqualTo(WorkflowState.STARTED);
         assertThat(found.get().documentId()).isEqualTo(new DocumentId("doc-123"));
     }
 

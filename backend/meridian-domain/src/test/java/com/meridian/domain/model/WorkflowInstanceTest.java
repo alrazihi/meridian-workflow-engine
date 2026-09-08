@@ -1,6 +1,6 @@
 package com.meridian.domain.model;
 
-import com.meridian.domain.model.valueobjects.WorkflowId;
+import com.meridian.domain.model.valueobjects.DocumentId;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
@@ -18,7 +18,7 @@ class WorkflowInstanceTest {
         );
 
         assertThat(instance.id()).isNotNull();
-        assertThat(instance.state()).isEqualTo("STARTED");
+        assertThat(instance.state()).isEqualTo(WorkflowState.STARTED);
         assertThat(instance.documentId().value()).isEqualTo("doc-123");
         assertThat(instance.correlationId()).isEqualTo("corr-456");
     }
@@ -30,8 +30,8 @@ class WorkflowInstanceTest {
                 "corr-456"
         );
 
-        WorkflowInstance updated = instance.withState("ROUTED");
-        assertThat(updated.state()).isEqualTo("ROUTED");
+        WorkflowInstance updated = instance.withState(WorkflowState.COMPLETED);
+        assertThat(updated.state()).isEqualTo(WorkflowState.COMPLETED);
         assertThat(updated.version()).isEqualTo(1L);
     }
 

@@ -7,6 +7,7 @@ import com.meridian.domain.model.DocumentStatus;
 import com.meridian.domain.model.DocumentType;
 import com.meridian.domain.model.TaskStatus;
 import com.meridian.domain.model.WorkflowInstance;
+import com.meridian.domain.model.WorkflowState;
 import com.meridian.domain.model.WorkflowTask;
 import com.meridian.domain.model.valueobjects.DocumentId;
 import com.meridian.infrastructure.messaging.kafka.DocumentEventConsumer;
@@ -155,7 +156,7 @@ class ConcurrencyDeterministicTest {
                 "APPROVED",
                 "First completion"
         );
-        assertThat(firstCompletion.state()).isEqualTo("COMPLETED");
+        assertThat(firstCompletion.state()).isEqualTo(WorkflowState.COMPLETED);
 
         WorkflowInstance secondCompletion = workflowOrchestrator.completeTask(
                 instance.id().value(),
@@ -163,7 +164,7 @@ class ConcurrencyDeterministicTest {
                 "APPROVED",
                 "Second completion attempt"
         );
-        assertThat(secondCompletion.state()).isEqualTo("COMPLETED");
+        assertThat(secondCompletion.state()).isEqualTo(WorkflowState.COMPLETED);
     }
 
     // ==================== DOCUMENT STATUS CONCURRENCY ====================

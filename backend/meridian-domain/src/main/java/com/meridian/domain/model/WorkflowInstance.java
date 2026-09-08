@@ -10,7 +10,7 @@ import java.util.Objects;
 public record WorkflowInstance(
     WorkflowId id,
     DocumentId documentId,
-    String state,
+    WorkflowState state,
     String context,
     String correlationId,
     Instant startedAt,
@@ -32,7 +32,7 @@ public record WorkflowInstance(
         return new WorkflowInstance(
             WorkflowId.generate(),
             documentId,
-            "STARTED",
+            WorkflowState.STARTED,
             "{}",
             correlationId,
             Instant.now(),
@@ -47,17 +47,17 @@ public record WorkflowInstance(
         return tasks;
     }
 
-    public WorkflowInstance withState(String newState) {
+    public WorkflowInstance withState(WorkflowState newState) {
         return new WorkflowInstance(
             this.id,
-            this.documentId,
+            this.documentId(),
             newState,
-            this.context,
-            this.correlationId,
-            this.startedAt,
-            this.completedAt,
+            this.context(),
+            this.correlationId(),
+            this.startedAt(),
+            this.completedAt(),
             this.version + 1,
-            this.createdAt,
+            this.createdAt(),
             this.tasks
         );
     }

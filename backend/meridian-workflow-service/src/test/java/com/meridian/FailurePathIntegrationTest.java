@@ -6,6 +6,7 @@ import com.meridian.domain.model.Document;
 import com.meridian.domain.model.DocumentStatus;
 import com.meridian.domain.model.DocumentType;
 import com.meridian.domain.model.WorkflowInstance;
+import com.meridian.domain.model.WorkflowState;
 import com.meridian.domain.model.WorkflowTask;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -125,7 +126,7 @@ class FailurePathIntegrationTest {
                 "APPROVED",
                 "First completion"
         );
-        assertThat(first.state()).isEqualTo("COMPLETED");
+        assertThat(first.state()).isEqualTo(WorkflowState.COMPLETED);
 
         WorkflowInstance second = workflowOrchestrator.completeTask(
                 instance.id().value(),
@@ -133,6 +134,6 @@ class FailurePathIntegrationTest {
                 "APPROVED",
                 "Second completion attempt"
         );
-        assertThat(second.state()).isEqualTo("COMPLETED");
+        assertThat(second.state()).isEqualTo(WorkflowState.COMPLETED);
     }
 }

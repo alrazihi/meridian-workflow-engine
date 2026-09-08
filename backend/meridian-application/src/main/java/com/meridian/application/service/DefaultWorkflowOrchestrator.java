@@ -116,7 +116,7 @@ public class DefaultWorkflowOrchestrator implements StartWorkflowUseCase, Comple
         );
 
         if ("APPROVED".equals(decision)) {
-            WorkflowInstance updated = instance.withState("COMPLETED");
+            WorkflowInstance updated = instance.withState(WorkflowState.COMPLETED);
             workflowInstanceRepository.save(updated);
             DocumentEvent event = DocumentEvent.create(
                     instance.documentId(),
@@ -127,7 +127,7 @@ public class DefaultWorkflowOrchestrator implements StartWorkflowUseCase, Comple
             eventPublisher.publish(event);
             return updated;
         } else {
-            WorkflowInstance updated = instance.withState("REJECTED");
+            WorkflowInstance updated = instance.withState(WorkflowState.REJECTED);
             workflowInstanceRepository.save(updated);
             DocumentEvent event = DocumentEvent.create(
                     instance.documentId(),

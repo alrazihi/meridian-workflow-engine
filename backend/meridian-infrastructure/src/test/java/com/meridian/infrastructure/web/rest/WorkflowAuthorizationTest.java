@@ -2,6 +2,7 @@ package com.meridian.infrastructure.web.rest;
 
 import com.meridian.application.port.inbound.CompleteTaskUseCase;
 import com.meridian.domain.model.WorkflowInstance;
+import com.meridian.domain.model.WorkflowState;
 import com.meridian.infrastructure.web.dto.CompleteTaskRequest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,7 +34,7 @@ class WorkflowAuthorizationTest {
         WorkflowInstance instance = WorkflowInstance.start(
                 new com.meridian.domain.model.valueobjects.DocumentId("doc-123"), "corr-456");
         when(completeTaskUseCase.completeTask("wf-1", "task-1", "APPROVED", "Looks good"))
-                .thenReturn(instance.withState("COMPLETED"));
+                .thenReturn(instance.withState(WorkflowState.COMPLETED));
 
         mockMvc.perform(post("/api/v1/workflows/wf-1/tasks/task-1/complete")
                 .with(csrf())
@@ -48,7 +49,7 @@ class WorkflowAuthorizationTest {
         WorkflowInstance instance = WorkflowInstance.start(
                 new com.meridian.domain.model.valueobjects.DocumentId("doc-456"), "corr-789");
         when(completeTaskUseCase.completeTask("wf-other", "task-other", "APPROVED", "test"))
-                .thenReturn(instance.withState("COMPLETED"));
+                .thenReturn(instance.withState(WorkflowState.COMPLETED));
 
         mockMvc.perform(post("/api/v1/workflows/wf-other/tasks/task-other/complete")
                 .with(csrf())

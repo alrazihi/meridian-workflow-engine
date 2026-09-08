@@ -3,6 +3,7 @@ package com.meridian.infrastructure.persistence.repository;
 import com.meridian.application.port.outbound.TaskRepository;
 import com.meridian.application.port.outbound.WorkflowInstanceRepository;
 import com.meridian.domain.model.WorkflowInstance;
+import com.meridian.domain.model.WorkflowState;
 import com.meridian.domain.model.valueobjects.DocumentId;
 import com.meridian.domain.model.valueobjects.WorkflowId;
 import com.meridian.infrastructure.persistence.jpa.WorkflowInstanceEntity;
@@ -41,7 +42,7 @@ public class JpaWorkflowInstanceRepository implements WorkflowInstanceRepository
         WorkflowInstanceEntity entity = new WorkflowInstanceEntity();
         entity.setId(instance.id().value());
         entity.setDocumentId(instance.documentId().value());
-        entity.setState(instance.state());
+        entity.setState(instance.state().name());
         entity.setContext(instance.context());
         entity.setCorrelationId(instance.correlationId());
         entity.setStartedAt(instance.startedAt());
@@ -56,7 +57,7 @@ public class JpaWorkflowInstanceRepository implements WorkflowInstanceRepository
         return new WorkflowInstance(
                 new WorkflowId(entity.getId()),
                 new DocumentId(entity.getDocumentId()),
-                entity.getState(),
+                WorkflowState.valueOf(entity.getState()),
                 entity.getContext(),
                 entity.getCorrelationId(),
                 entity.getStartedAt(),

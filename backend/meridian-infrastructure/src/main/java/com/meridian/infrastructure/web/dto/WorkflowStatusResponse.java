@@ -25,7 +25,7 @@ public record WorkflowStatusResponse(
         return new WorkflowStatusResponse(
                 instance.id().value(),
                 instance.documentId().value(),
-                instance.state(),
+                instance.state().name(),
                 currentTask != null ? TaskResponse.from(currentTask) : null,
                 instance.startedAt(),
                 instance.completedAt()

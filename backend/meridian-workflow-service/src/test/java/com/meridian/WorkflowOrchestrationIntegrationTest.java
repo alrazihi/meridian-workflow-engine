@@ -6,6 +6,7 @@ import com.meridian.domain.model.Document;
 import com.meridian.domain.model.DocumentStatus;
 import com.meridian.domain.model.DocumentType;
 import com.meridian.domain.model.WorkflowInstance;
+import com.meridian.domain.model.WorkflowState;
 import com.meridian.domain.model.WorkflowTask;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -56,7 +57,7 @@ class WorkflowOrchestrationIntegrationTest {
 
         WorkflowInstance instance = workflowOrchestrator.start(document.id().value());
         assertThat(instance.id()).isNotNull();
-        assertThat(instance.state()).isEqualTo("STARTED");
+        assertThat(instance.state()).isEqualTo(WorkflowState.STARTED);
         assertThat(instance.tasks()).hasSize(1);
     }
 
@@ -82,6 +83,6 @@ class WorkflowOrchestrationIntegrationTest {
                 "Looks good"
         );
 
-        assertThat(completed.state()).isEqualTo("COMPLETED");
+        assertThat(completed.state()).isEqualTo(WorkflowState.COMPLETED);
     }
 }

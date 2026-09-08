@@ -3,6 +3,7 @@ package com.meridian.infrastructure.web.rest;
 import com.meridian.application.port.inbound.CompleteTaskUseCase;
 import com.meridian.application.port.inbound.QueryWorkflowStatusUseCase;
 import com.meridian.domain.model.WorkflowInstance;
+import com.meridian.domain.model.WorkflowState;
 import com.meridian.domain.model.WorkflowTask;
 import com.meridian.infrastructure.web.dto.CompleteTaskRequest;
 import com.meridian.infrastructure.web.dto.WorkflowStatusResponse;
@@ -57,14 +58,14 @@ class WorkflowControllerTest {
         WorkflowInstance instance = WorkflowInstance.start(
                 new com.meridian.domain.model.valueobjects.DocumentId("doc-123"), "corr-456");
         when(completeTaskUseCase.completeTask("wf-1", "task-1", "APPROVED", "Looks good"))
-                .thenReturn(instance.withState("COMPLETED"));
+                .thenReturn(instance.withState(WorkflowState.COMPLETED));
 
         mockMvc.perform(post("/api/v1/workflows/wf-1/tasks/task-1/complete")
                 .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"decision\":\"APPROVED\",\"comments\":\"Looks good\"}"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.state").value(is("STARTED")));
+                .andExpect(jsonPath("$.state").value(is("COMPLETED")));
     }
 
     @Test
