@@ -5,6 +5,7 @@ import com.meridian.domain.model.DocumentStatus;
 import com.meridian.domain.model.DocumentType;
 
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.Map;
 
 public record DocumentResponse(
@@ -20,12 +21,13 @@ public record DocumentResponse(
         if (document == null) {
             return null;
         }
+        Map<String, Object> metadataMap = new HashMap<>(document.metadata());
         return new DocumentResponse(
                 document.id().value(),
                 document.status(),
                 document.type(),
                 document.priority().name(),
-                document.metadata(),
+                metadataMap,
                 document.createdAt(),
                 document.contentHash()
         );
