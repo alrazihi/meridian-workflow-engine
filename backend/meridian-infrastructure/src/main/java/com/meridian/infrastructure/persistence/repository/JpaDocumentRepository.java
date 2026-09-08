@@ -1,20 +1,24 @@
 package com.meridian.infrastructure.persistence.repository;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.meridian.application.port.outbound.DocumentRepository;
 import com.meridian.domain.model.Document;
 import com.meridian.domain.model.valueobjects.DocumentId;
 import com.meridian.infrastructure.persistence.jpa.DocumentEntity;
 import org.springframework.stereotype.Repository;
 
-import java.util.Optional;
+import java.util.Map;
 
 @Repository
 public class JpaDocumentRepository implements DocumentRepository {
 
     private final DocumentJpaRepository documentJpaRepository;
+    private final ObjectMapper objectMapper;
 
-    public JpaDocumentRepository(DocumentJpaRepository documentJpaRepository) {
+    public JpaDocumentRepository(DocumentJpaRepository documentJpaRepository, ObjectMapper objectMapper) {
         this.documentJpaRepository = documentJpaRepository;
+        this.objectMapper = objectMapper;
     }
 
     @Override
@@ -39,7 +43,11 @@ public class JpaDocumentRepository implements DocumentRepository {
         DocumentEntity entity = new DocumentEntity();
         entity.setId(document.id().value());
         entity.setContentHash(document.contentHash());
-        entity.setMetadata(document.metadata());
+        try {
+            entity.setMetadata(objectMapper.writeValueAsString(document.metadata()));
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException("Failed to serialize metadata", e);
+        }
         entity.setStatus(document.status().name());
         entity.setType(document.type().name());
         entity.setPriority(document.priority().name());
@@ -48,11 +56,20 @@ public class JpaDocumentRepository implements DocumentRepository {
         return entity;
     }
 
+    @SuppressWarnings("unchecked")
     private Document toDomain(DocumentEntity entity) {
+        Map<String, String> metadata = Map.of();
+        if (entity.getMetadata() != null && !entity.getMetadata().isBlank()) {
+            try {
+                metadata = objectMapper.readValue(entity.getMetadata(), Map.class);
+            } catch (JsonProcessingException e) {
+                throw new IllegalStateException("Failed to deserialize metadata", e);
+            }
+        }
         return new Document(
                 new DocumentId(entity.getId()),
                 entity.getContentHash(),
-                entity.getMetadata(),
+                metadata,
                 DocumentStatus.valueOf(entity.getStatus()),
                 DocumentType.valueOf(entity.getType()),
                 Priority.valueOf(entity.getPriority()),

@@ -13,11 +13,15 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1")
 public class DocumentController {
+
+    private static final String WEBHOOK_SECRET = System.getenv().getOrDefault("WEBHOOK_SECRET", "changeme-webhook-secret");
 
     private final IngestDocumentUseCase ingestDocumentUseCase;
     private final QueryDocumentUseCase queryDocumentUseCase;
@@ -52,11 +56,59 @@ public class DocumentController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
+    @PostMapping(value = "/webhooks/documents", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<DocumentResponse> ingestDocumentViaWebhook(
+            @RequestHeader("X-HMAC-Signature") String signature,
+            @RequestBody Map<String, Object> payload
+    ) {
+        if (!verifyHmac(signature, payload.toString())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        String typeStr = (String) payload.get("type");
+        DocumentType type = DocumentType.valueOf(typeStr);
+        String priority = (String) payload.getOrDefault("priority", "NORMAL");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> metadata = (Map<String, Object>) payload.getOrDefault("metadata", Map.of());
+        String idempotencyKey = (String) payload.get("idempotencyKey");
+
+        Document document = ingestDocumentUseCase.ingest(
+                payload.get("content").toString().getBytes(),
+                type,
+                priority,
+                metadata,
+                idempotencyKey
+        );
+        DocumentResponse response = DocumentResponse.from(document);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
     @GetMapping("/documents/{documentId}")
-    @PreAuthorize("hasRole('OPERATOR') or hasRole('REVIEWER') or hasRole('ADMIN')")
+    @PreAuthorize("hasDocumentAccess(#documentId)")
     public ResponseEntity<DocumentResponse> getDocument(@PathVariable String documentId) {
         Document document = queryDocumentUseCase.getDocument(new com.meridian.domain.model.valueobjects.DocumentId(documentId));
         DocumentResponse response = DocumentResponse.from(document);
         return ResponseEntity.ok(response);
+    }
+
+    private boolean verifyHmac(String signature, String payload) {
+        try {
+            Mac mac = Mac.getInstance("HmacSHA256");
+            SecretKeySpec secretKey = new SecretKeySpec(WEBHOOK_SECRET.getBytes(), "HmacSHA256");
+            mac.init(secretKey);
+            byte[] expected = mac.doFinal(payload.getBytes());
+            String expectedHex = bytesToHex(expected);
+            return signature.equals(expectedHex);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private String bytesToHex(byte[] bytes) {
+        StringBuilder sb = new StringBuilder();
+        for (byte b : bytes) {
+            sb.append(String.format("%02x", b));
+        }
+        return sb.toString();
     }
 }

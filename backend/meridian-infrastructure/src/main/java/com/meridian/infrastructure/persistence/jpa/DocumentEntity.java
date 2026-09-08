@@ -16,7 +16,8 @@ public class DocumentEntity {
     private String contentHash;
 
     @Column(name = "metadata", columnDefinition = "jsonb", nullable = false)
-    private Map<String, Object> metadata;
+    @Convert(converter = com.meridian.infrastructure.persistence.converter.EncryptedMetadataConverter.class)
+    private String metadata;
 
     @Column(name = "status", nullable = false, length = 20)
     private String status;
