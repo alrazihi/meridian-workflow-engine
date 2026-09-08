@@ -1,5 +1,6 @@
 package com.meridian.infrastructure.web.rest;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.meridian.application.port.inbound.IngestDocumentUseCase;
 import com.meridian.application.port.inbound.QueryWorkflowStatusUseCase;
 import com.meridian.domain.model.Document;
@@ -12,7 +13,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Map;
 
@@ -22,10 +22,12 @@ public class DocumentController {
 
     private final IngestDocumentUseCase ingestDocumentUseCase;
     private final QueryWorkflowStatusUseCase queryWorkflowStatusUseCase;
+    private final ObjectMapper objectMapper;
 
-    public DocumentController(IngestDocumentUseCase ingestDocumentUseCase, QueryWorkflowStatusUseCase queryWorkflowStatusUseCase) {
+    public DocumentController(IngestDocumentUseCase ingestDocumentUseCase, QueryWorkflowStatusUseCase queryWorkflowStatusUseCase, ObjectMapper objectMapper) {
         this.ingestDocumentUseCase = ingestDocumentUseCase;
         this.queryWorkflowStatusUseCase = queryWorkflowStatusUseCase;
+        this.objectMapper = objectMapper;
     }
 
     @PostMapping(value = "/documents", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -39,7 +41,11 @@ public class DocumentController {
     ) {
         Map<String, Object> metadata = Map.of();
         if (metadataJson != null && !metadataJson.isBlank()) {
-            metadata = new com.fasterxml.jackson.databind.ObjectMapper().readValue(metadataJson, Map.class);
+            try {
+                metadata = objectMapper.readValue(metadataJson, Map.class);
+            } catch (Exception e) {
+                throw new IllegalArgumentException("Invalid metadata JSON", e);
+            }
         }
 
         Document document = ingestDocumentUseCase.ingest(file, type, priority, metadata, idempotencyKey);
