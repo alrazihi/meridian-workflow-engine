@@ -9,7 +9,9 @@ import com.meridian.infrastructure.persistence.repository.AuditLogJpaRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class PersistenceAuditService implements AuditService {
@@ -42,5 +44,47 @@ public class PersistenceAuditService implements AuditService {
         entity.setOccurredAt(auditLog.occurredAt());
         entity.setCreatedAt(auditLog.createdAt());
         auditLogJpaRepository.save(entity);
+    }
+
+    @Override
+    public List<AuditLog> query(String actor, String resourceType, String resourceId, Instant from, Instant to) {
+        if (from == null) from = Instant.now().minusSeconds(86400);
+        if (to == null) to = Instant.now();
+
+        List<AuditLogEntity> entities;
+        if (actor != null && resourceType != null && resourceId != null) {
+            entities = auditLogJpaRepository.findByResourceTypeAndResourceIdAndOccurredAtBetween(resourceType, resourceId, from, to);
+        } else if (actor != null) {
+            entities = auditLogJpaRepository.findByActorAndOccurredAtBetween(actor, from, to);
+        } else {
+            entities = auditLogJpaRepository.findAll().stream()
+                    .filter(e -> e.getOccurredAt().isAfter(from) && e.getOccurredAt().isBefore(to))
+                    .toList();
+        }
+
+        return entities.stream().map(this::toDomain).collect(Collectors.toList());
+    }
+
+    private AuditLog toDomain(AuditLogEntity entity) {
+        Map<String, Object> details = Map.of();
+        if (entity.getDetails() != null && !entity.getDetails().isBlank()) {
+            try {
+                details = objectMapper.readValue(entity.getDetails(), Map.class);
+            } catch (Exception e) {
+                details = Map.of();
+            }
+        }
+        return new AuditLog(
+                entity.getId(),
+                entity.getActor(),
+                entity.getAction(),
+                entity.getResourceType(),
+                entity.getResourceId(),
+                entity.getIpAddress(),
+                entity.getUserAgent(),
+                details,
+                entity.getOccurredAt(),
+                entity.getCreatedAt()
+        );
     }
 }
