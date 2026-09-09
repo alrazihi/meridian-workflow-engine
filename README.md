@@ -45,7 +45,9 @@ docker compose up --build
 
 ## Documentation
 
-- [Architecture](ARCHITECTURE.md)
+- [Architecture Case Study](docs/architecture-case-study.md)
+- [Architecture Diagrams](docs/architecture-diagrams.md)
+- [Architecture Overview](ARCHITECTURE.md)
 - [Threat Model](THREAT-MODEL.md)
 - [ADRs](ADR/)
 - [API Documentation](docs/api/openapi.yaml)
