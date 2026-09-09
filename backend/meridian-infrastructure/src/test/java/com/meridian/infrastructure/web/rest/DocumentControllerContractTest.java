@@ -44,7 +44,7 @@ class DocumentControllerContractTest {
     @Test
     @WithMockUser(roles = "OPERATOR")
     void shouldReturn201WithDocumentResponseOnSuccessfulIngest() throws Exception {
-        Document document = Document.create("hash123", DocumentType.INVOICE, Map.of("vendorId", "VEND-001"), null, "test-tenant");
+        Document document = Document.create("hash123", DocumentType.INVOICE, Map.of("vendorId", "VEND-001"), null);
         document = new Document(
                 document.id(), document.contentHash(), document.metadata(),
                 DocumentStatus.VALIDATING, document.type(), document.priority(),
@@ -85,8 +85,8 @@ class DocumentControllerContractTest {
     @Test
     @WithMockUser(roles = "OPERATOR")
     void shouldReturn200WithPaginatedDocuments() throws Exception {
-        Document doc1 = Document.create("hash1", DocumentType.INVOICE, Map.of(), null, "test-tenant");
-        Document doc2 = Document.create("hash2", DocumentType.RECEIPT, Map.of(), null, "test-tenant");
+        Document doc1 = Document.create("hash1", DocumentType.INVOICE, Map.of(), null);
+        Document doc2 = Document.create("hash2", DocumentType.RECEIPT, Map.of(), null);
         when(queryDocumentUseCase.listDocuments()).thenReturn(List.of(doc1, doc2));
 
         mockMvc.perform(get("/api/v1/documents?page=0&size=10"))
@@ -108,7 +108,7 @@ class DocumentControllerContractTest {
     @Test
     @WithMockUser(roles = "OPERATOR")
     void shouldReturnDocumentById() throws Exception {
-        Document document = Document.create("hash123", DocumentType.INVOICE, Map.of("vendorId", "VEND-001"), null, "test-tenant");
+        Document document = Document.create("hash123", DocumentType.INVOICE, Map.of("vendorId", "VEND-001"), null);
         when(queryDocumentUseCase.getDocument(org.mockito.ArgumentMatchers.any()))
                 .thenReturn(document);
 

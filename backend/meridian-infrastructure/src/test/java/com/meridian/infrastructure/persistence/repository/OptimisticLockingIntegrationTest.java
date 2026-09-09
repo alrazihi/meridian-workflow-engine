@@ -48,7 +48,7 @@ class OptimisticLockingIntegrationTest {
 
     @Test
     void shouldDetectConcurrentUpdateConflict() throws Exception {
-        Document document = Document.create("hash123", DocumentType.INVOICE, Map.of("vendorId", "VEND-001"), null, "test-tenant");
+        Document document = Document.create("hash123", DocumentType.INVOICE, Map.of("vendorId", "VEND-001"), null);
         Document saved = jpaDocumentRepository.save(document);
         DocumentId documentId = saved.id();
 

@@ -62,7 +62,7 @@ class DefaultWorkflowOrchestratorTest {
 
     @Test
     void shouldStartWorkflowForValidDocument() {
-        Document document = Document.create("hash123", DocumentType.INVOICE, Map.of("vendorId", "VEND-001"), null, "test-tenant");
+        Document document = Document.create("hash123", DocumentType.INVOICE, Map.of("vendorId", "VEND-001"), null);
         document = new Document(
                 document.id(), document.contentHash(), document.metadata(),
                 DocumentStatus.VALIDATING, document.type(), document.priority(),
@@ -97,7 +97,7 @@ class DefaultWorkflowOrchestratorTest {
 
     @Test
     void shouldThrowWhenDocumentStatusTransitionInvalid() {
-        Document document = Document.create("hash123", DocumentType.INVOICE, Map.of("vendorId", "VEND-001"), null, "test-tenant");
+        Document document = Document.create("hash123", DocumentType.INVOICE, Map.of("vendorId", "VEND-001"), null);
         when(documentRepository.findById(new DocumentId("doc-123"))).thenReturn(Optional.of(document));
 
         assertThatThrownBy(() -> orchestrator.start("doc-123"))

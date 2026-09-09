@@ -21,7 +21,7 @@ public record Document(
         Objects.requireNonNull(id, "id cannot be null");
     }
 
-    public static Document create(String contentHash, DocumentType type, Map<String, String> metadata, String idempotencyKey, String tenantId) {
+    public static Document create(String contentHash, DocumentType type, Map<String, String> metadata, String idempotencyKey) {
         return new Document(
                 DocumentId.generate(),
                 contentHash,
@@ -32,8 +32,7 @@ public record Document(
                 Instant.now(),
                 Instant.now(),
                 0L,
-                idempotencyKey,
-                tenantId
+                idempotencyKey
         );
     }
 }

@@ -32,7 +32,7 @@ class DefaultDocumentQueryServiceTest {
 
     @Test
     void shouldReturnDocumentById() {
-        Document document = Document.create("hash123", DocumentType.INVOICE, Map.of("vendorId", "VEND-001"), null, "test-tenant");
+        Document document = Document.create("hash123", DocumentType.INVOICE, Map.of("vendorId", "VEND-001"), null);
         when(documentRepository.findById(new DocumentId("doc-123"))).thenReturn(Optional.of(document));
 
         Document result = queryService.getDocument(new DocumentId("doc-123"));
@@ -53,8 +53,8 @@ class DefaultDocumentQueryServiceTest {
     @Test
     void shouldReturnAllDocuments() {
         List<Document> documents = List.of(
-                Document.create("hash1", DocumentType.INVOICE, Map.of(), null, "test-tenant"),
-                Document.create("hash2", DocumentType.RECEIPT, Map.of(), null, "test-tenant")
+                Document.create("hash1", DocumentType.INVOICE, Map.of(), null),
+                Document.create("hash2", DocumentType.RECEIPT, Map.of(), null)
         );
         when(documentRepository.findAll()).thenReturn(documents);
 

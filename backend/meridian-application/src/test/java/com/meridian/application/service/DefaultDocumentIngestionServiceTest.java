@@ -49,7 +49,7 @@ class DefaultDocumentIngestionServiceTest {
         DefaultDocumentIngestionService service = new DefaultDocumentIngestionService(
                 documentRepository, eventPublisher, validator, notificationService, workflowMetrics, auditService);
 
-        Document saved = Document.create("hash123", DocumentType.INVOICE, Map.of("vendorId", "VEND-001"), null, "test-tenant");
+        Document saved = Document.create("hash123", DocumentType.INVOICE, Map.of("vendorId", "VEND-001"), null);
         when(documentRepository.save(any(Document.class))).thenReturn(saved);
         when(documentRepository.existsByIdempotencyKey(anyString())).thenReturn(false);
 
@@ -101,7 +101,7 @@ class DefaultDocumentIngestionServiceTest {
         DefaultDocumentIngestionService service = new DefaultDocumentIngestionService(
                 documentRepository, eventPublisher, validator, notificationService, workflowMetrics, auditService);
 
-        Document saved = Document.create("hash123", DocumentType.INVOICE, Map.of("vendorId", "VEND-001"), null, "test-tenant");
+        Document saved = Document.create("hash123", DocumentType.INVOICE, Map.of("vendorId", "VEND-001"), null);
         when(documentRepository.save(any(Document.class))).thenReturn(saved);
         when(documentRepository.existsByIdempotencyKey(anyString())).thenReturn(false);
 
@@ -120,7 +120,7 @@ class DefaultDocumentIngestionServiceTest {
         DefaultDocumentIngestionService service = new DefaultDocumentIngestionService(
                 documentRepository, eventPublisher, validator, notificationService, workflowMetrics, auditService);
 
-        Document saved = Document.create("hash123", DocumentType.INVOICE, Map.of("vendorId", "VEND-001"), null, "test-tenant");
+        Document saved = Document.create("hash123", DocumentType.INVOICE, Map.of("vendorId", "VEND-001"), null);
         when(documentRepository.save(any(Document.class))).thenReturn(saved);
         when(documentRepository.existsByIdempotencyKey(anyString())).thenReturn(false);
 
@@ -137,7 +137,7 @@ class DefaultDocumentIngestionServiceTest {
         DefaultDocumentIngestionService service = new DefaultDocumentIngestionService(
                 documentRepository, eventPublisher, validator, notificationService, workflowMetrics, auditService);
 
-        Document saved = Document.create("hash123", DocumentType.INVOICE, Map.of("vendorId", "VEND-001"), null, "test-tenant");
+        Document saved = Document.create("hash123", DocumentType.INVOICE, Map.of("vendorId", "VEND-001"), null);
         when(documentRepository.save(any(Document.class))).thenReturn(saved);
         when(documentRepository.existsByIdempotencyKey(anyString())).thenReturn(false);
 
